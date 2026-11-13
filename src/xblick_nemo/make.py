@@ -1,12 +1,12 @@
-"""durchblick-nemo-make: a neural object from images of the object (a few, from around it), without a camera stream.
+"""xblick-nemo-make: a neural object from images of the object (a few, from around it), without a camera stream.
 
-    durchblick-nemo-make NAME --objects-dir DIR --images A.jpg B.jpg ...
+    xblick-nemo-make NAME --objects-dir DIR --images A.jpg B.jpg ...
                          [--masks A.png B.png ... | --boxes X0,Y0,X1,Y1 ...]
 
 Each image is cropped square around its mask's or box's extent (1.4 times its longer side), or, with neither, to its
 centred square (as NeMO's own capture does: the object in the middle, filling much of the image). Written to
-``<DIR>/NeMO/NAME/`` (objects.py); the node loads it with ``--object NAME`` or at run time (durchblick-nemo-objects add
-NAME). From a camera's stream instead: durchblick-nemo-objects make (the node collects the views).
+``<DIR>/NeMO/NAME/`` (objects.py); the node loads it with ``--object NAME`` or at run time (xblick-nemo-objects add
+NAME). From a camera's stream instead: xblick-nemo-objects make (the node collects the views).
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import numpy as np
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="durchblick-nemo-make", description=__doc__,
+    parser = argparse.ArgumentParser(prog="xblick-nemo-make", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("name")
     parser.add_argument("--objects-dir", required=True)
@@ -58,7 +58,7 @@ def main(argv=None) -> int:
     out = objects.save(Path(args.objects_dir), args.name, features, points, crops,
                        {"source": "images", "images": [str(Path(p).resolve()) for p in args.images],
                         "crop": "masks" if args.masks else "boxes" if args.boxes else "centred square"})
-    print(f"durchblick-nemo-make: {args.name} from {len(crops)} images -> {out}", flush=True)
+    print(f"xblick-nemo-make: {args.name} from {len(crops)} images -> {out}", flush=True)
     return 0
 
 

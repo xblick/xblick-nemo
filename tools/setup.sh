@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sets durchblick-nemo up from scratch or updates it:
+# Sets xblick-nemo up from scratch or updates it:
 #
 # * NeMO's code and checkpoint: the submodule third_party/nemo (a fixed commit; its checkpoint as shards in git, joined
 #   into weights/checkpoint.pth and checked against its SHA-256)
@@ -24,7 +24,7 @@ fi
 echo "$CHECKPOINT_SHA256  weights/checkpoint.pth" | sha256sum --check --quiet || {
     echo "weights/checkpoint.pth: not NeMO's checkpoint of third_party/nemo's commit; remove it and run again" >&2; exit 1; }
 "$UV" sync --frozen
-DINOV2_COMMIT=$(.venv/bin/python -c "from durchblick_nemo.nemo import DINOV2_COMMIT; print(DINOV2_COMMIT)")
+DINOV2_COMMIT=$(.venv/bin/python -c "from xblick_nemo.nemo import DINOV2_COMMIT; print(DINOV2_COMMIT)")
 if [[ ! -d weights/dinov2 ]]; then
     git clone --quiet https://github.com/facebookresearch/dinov2.git weights/dinov2.tmp
     git -C weights/dinov2.tmp checkout --quiet "$DINOV2_COMMIT"
@@ -32,4 +32,4 @@ if [[ ! -d weights/dinov2 ]]; then
 fi
 [[ "$(git -C weights/dinov2 rev-parse HEAD)" == "$DINOV2_COMMIT" ]] || {
     echo "weights/dinov2: not at $DINOV2_COMMIT; remove it and run again" >&2; exit 1; }
-echo "durchblick-nemo: set up"
+echo "xblick-nemo: set up"

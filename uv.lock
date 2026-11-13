@@ -3,17 +3,6 @@ revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
-name = "blick"
-version = "0.4.0"
-source = { git = "https://github.com/xblick/durchblick?branch=main#d0f665007f684b707fb0b18b01c65d76348769c5" }
-dependencies = [
-    { name = "eclipse-zenoh" },
-    { name = "numpy" },
-    { name = "pillow" },
-    { name = "textual" },
-]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -120,53 +109,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a9/95/a3dbbb5028f35eafb79008e7522a75244477d2838f38cbb722248dabc2a8/cycler-0.12.1.tar.gz", hash = "sha256:88bb128f02ba341da8ef447245a9e138fae777f6a23943da4540077d3601eb1c", size = 7615, upload-time = "2023-10-07T05:32:18.335Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl", hash = "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30", size = 8321, upload-time = "2023-10-07T05:32:16.783Z" },
-]
-
-[[package]]
-name = "durchblick-nemo"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "blick" },
-    { name = "einops" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "opencv-python-headless" },
-    { name = "pillow" },
-    { name = "plotly" },
-    { name = "torch" },
-    { name = "torchvision" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "scipy" },
-    { name = "trimesh" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "blick", git = "https://github.com/xblick/durchblick?branch=main" },
-    { name = "einops", specifier = ">=0.7" },
-    { name = "matplotlib", specifier = ">=3.8" },
-    { name = "numpy", specifier = ">=1.26" },
-    { name = "omegaconf", specifier = ">=2.3" },
-    { name = "opencv-python-headless", specifier = ">=4.8" },
-    { name = "pillow", specifier = ">=10" },
-    { name = "plotly", specifier = ">=5" },
-    { name = "torch", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu130" },
-    { name = "torchvision", index = "https://download.pytorch.org/whl/cu130" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8" },
-    { name = "ruff", specifier = ">=0.6" },
-    { name = "scipy", specifier = ">=1.11" },
-    { name = "trimesh", specifier = ">=4" },
 ]
 
 [[package]]
@@ -913,4 +855,62 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7a/29/6a1391d31cd00ff9e927215a224a880e1e84e826b64ba80a499e51c074d8/tzdata-2026.6.tar.gz", hash = "sha256:85d2cd9c09f81f0bb29db27759fc83af4f1e620efb814f8c5bf8b4cc4feece6d", size = 201017, upload-time = "2026-10-28T09:57:09.137Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl", hash = "sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec", size = 348210, upload-time = "2026-10-28T09:57:07.276Z" },
+]
+
+[[package]]
+name = "xblick"
+version = "0.5.0"
+source = { git = "https://github.com/xblick/xblick.git?rev=45908e67465647b39a6b185665bd91da175924ca#45908e67465647b39a6b185665bd91da175924ca" }
+dependencies = [
+    { name = "eclipse-zenoh" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "textual" },
+]
+
+[[package]]
+name = "xblick-nemo"
+version = "0.2.0"
+source = { editable = "." }
+dependencies = [
+    { name = "einops" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "opencv-python-headless" },
+    { name = "pillow" },
+    { name = "plotly" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "xblick" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "scipy" },
+    { name = "trimesh" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "einops", specifier = ">=0.7" },
+    { name = "matplotlib", specifier = ">=3.8" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "omegaconf", specifier = ">=2.3" },
+    { name = "opencv-python-headless", specifier = ">=4.8" },
+    { name = "pillow", specifier = ">=10" },
+    { name = "plotly", specifier = ">=5" },
+    { name = "torch", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu130" },
+    { name = "torchvision", index = "https://download.pytorch.org/whl/cu130" },
+    { name = "xblick", git = "https://github.com/xblick/xblick.git?rev=45908e67465647b39a6b185665bd91da175924ca" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8" },
+    { name = "ruff", specifier = ">=0.6" },
+    { name = "scipy", specifier = ">=1.11" },
+    { name = "trimesh", specifier = ">=4" },
 ]

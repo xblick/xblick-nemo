@@ -15,7 +15,7 @@ MUG = Path(__file__).resolve().parents[1] / "third_party" / "nemo" / "assets" / 
 def test_nemo_finds_the_mug():
     from PIL import Image
 
-    from durchblick_nemo.nemo import NeMO, crop_images
+    from xblick_nemo.nemo import NeMO, crop_images
 
     images = [torch.as_tensor(np.asarray(Image.open(p).convert("RGB")), device="cuda")
               for p in sorted(MUG.glob("*.jpg"))]

@@ -5,8 +5,8 @@ import pytest
 import torch
 from scipy.spatial.transform import Rotation
 
-from durchblick_nemo import objects
-from durchblick_nemo.nemo import CROP, crop_images, crop_pixels, sim3_ransac, square_box, umeyama_batched
+from xblick_nemo import objects
+from xblick_nemo.nemo import CROP, crop_images, crop_pixels, sim3_ransac, square_box, umeyama_batched
 
 
 def test_square_box_around_a_mask():

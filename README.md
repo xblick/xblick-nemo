@@ -1,6 +1,6 @@
-# durchblick-nemo
+# xblick-nemo
 
-This [Durchblick](https://github.com/xblick/durchblick) node finds, segments and poses objects that
+This [Durchblick](https://github.com/xblick/xblick) node finds, segments and poses objects that
 it knows from a few images. It needs no mesh and no text prompt, and it works on any camera with depth, at about
 10 ms per object and frame.
 
@@ -14,18 +14,18 @@ The node fits NeMO's object coordinates to the measured depth, so its poses are 
 | --- | --- | --- |
 | `<camera>/nemo/detections_3d` | `vision_msgs/Detection3DArray` | One detection per object, stamped as the frame: the object's name, its pose in the colour camera's frame, and its box. |
 | `<camera>/nemo/instances` | image, `mono16` | With `--segments`: the instance id of each pixel, in the colour camera's own image. |
-| `<camera>/nemo/detections_2d` | `vision_msgs/Detection2DArray` | With `--segments`: the 2D detections, as durchblick-sam3 publishes them. |
+| `<camera>/nemo/detections_2d` | `vision_msgs/Detection2DArray` | With `--segments`: the 2D detections, as xblick-sam3 publishes them. |
 | `<camera>/diagnostics` | `diagnostic_msgs/DiagnosticArray` | The node's report with the frame rate in effect and the transport of each stream. |
 | `nemo/cameras` | queryable (JSON) | Starts and stops cameras at run time. |
 | `nemo/objects` | queryable (JSON) | Lists, adds, removes and makes objects at run time. |
 
-With `--segments`, durchblick-foundationpose can use this node as its segmenter (`--camera CAMERA:segmenter=nemo`).
+With `--segments`, xblick-foundationpose can use this node as its segmenter (`--camera CAMERA:segmenter=nemo`).
 
 ## Requirements
 
 - An NVIDIA GPU with CUDA.
 - `uv`, `git` and Python 3.12.
-- Durchblick's Python package `blick` 0.4 or newer, below 0.5. The setup installs it from GitHub.
+- Durchblick's Python package `xblick` 0.5 or newer, below 0.6. The setup installs it from GitHub.
 - A camera with a colour stream and a depth stream in the colour camera's geometry.
 - NeMO's code and checkpoint are under the MIT licence. DINOv2's code is under Apache-2.0.
 
@@ -43,9 +43,9 @@ again, and it then does only what changed. After the setup, the node needs no ne
 First make an object from a few images of it and their masks. Then start the node on a camera:
 
 ```bash
-.venv/bin/durchblick-nemo-make torch --objects-dir ~/.local/share/durchblick/objects \
+.venv/bin/xblick-nemo-make torch --objects-dir ~/.local/share/xblick/objects \
     --images a.png b.png c.png d.png --masks a_mask.png b_mask.png c_mask.png d_mask.png
-.venv/bin/durchblick-nemo --objects-dir ~/.local/share/durchblick/objects --object torch \
+.venv/bin/xblick-nemo --objects-dir ~/.local/share/xblick/objects --object torch \
     --camera robot/rc_visard:color=left:depth=ffs/depth
 ```
 
@@ -65,18 +65,18 @@ The options that most users change:
 You change objects and cameras at run time with one client:
 
 ```bash
-.venv/bin/durchblick-nemo-objects                    # lists the loaded and the available objects
-.venv/bin/durchblick-nemo-objects make robot/camera mug --label mug --views 4 --min-angle 15
+.venv/bin/xblick-nemo-objects                    # lists the loaded and the available objects
+.venv/bin/xblick-nemo-objects make robot/camera mug --label mug --views 4 --min-angle 15
 ```
 
 The `make` command builds an object from the next views of a camera. That camera needs a segmenter for the masks,
 for example `--camera robot/camera:segmenter=sam3`.
 
-Every option is also a parameter of the node `nemo`, which Durchblick's terminal interface (`blick`, tab Parameters)
-and `blick param` show. The objects to find are the parameter `object`, a list of object names. A new list
+Every option is also a parameter of the node `nemo`, which Durchblick's terminal interface (`xblick`, tab Parameters)
+and `xblick param` show. The objects to find are the parameter `object`, a list of object names. A new list
 takes effect while the node runs: the node loads the new objects and drops the others, and it refuses a name that is
 not in the objects directory, with the reason. The read-only parameter `library` lists the objects in the objects
-directory, made ones too, as `durchblick-nemo-objects` does. Objects added, removed or made with `durchblick-nemo-objects` show in
+directory, made ones too, as `xblick-nemo-objects` does. Objects added, removed or made with `xblick-nemo-objects` show in
 the parameter. The thresholds, `min_pixels` and `detect_every` also change while the node runs. The other options
 apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them.
 
@@ -114,10 +114,10 @@ The node needs 10 ms per object and frame. NeMO's own code needs 43 to 93 ms for
 | [docs/performance.md](docs/performance.md) | timings and what makes the node fast |
 
 Durchblick's pages explain the terms that these pages use:
-[streams and topics](https://github.com/xblick/durchblick/blob/main/docs/concepts/streams-and-topics.md),
-[transports](https://github.com/xblick/durchblick/blob/main/docs/concepts/transports.md),
-[frames on the GPU](https://github.com/xblick/durchblick/blob/main/docs/concepts/gpu-frames.md) and
-[pairing streams](https://github.com/xblick/durchblick/blob/main/docs/guides/pairing-streams.md).
+[streams and topics](https://github.com/xblick/xblick/blob/main/docs/concepts/streams-and-topics.md),
+[transports](https://github.com/xblick/xblick/blob/main/docs/concepts/transports.md),
+[frames on the GPU](https://github.com/xblick/xblick/blob/main/docs/concepts/gpu-frames.md) and
+[pairing streams](https://github.com/xblick/xblick/blob/main/docs/guides/pairing-streams.md).
 
 ## Licence and credits
 

@@ -13,11 +13,11 @@ import time
 
 import pytest
 import torch
-from blick.parameters import ParameterClient
-from blick.session import open_session, replies
+from xblick.parameters import ParameterClient
+from xblick.session import open_session, replies
 
-from durchblick_nemo import objects
-from durchblick_nemo.nemo import CROP
+from xblick_nemo import objects
+from xblick_nemo.nemo import CROP
 
 pytestmark = pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a CUDA device")
 
@@ -32,7 +32,7 @@ def test_the_objects_to_find_are_a_live_parameter(tmp_path):
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
     session = open_session(listen=[f"127.0.0.1:{port}"])
-    command = [shutil.which("durchblick-nemo", path=os.path.dirname(sys.executable)), "--objects-dir", str(tmp_path),
+    command = [shutil.which("xblick-nemo", path=os.path.dirname(sys.executable)), "--objects-dir", str(tmp_path),
                "--object", "red-tape", "--connect", f"127.0.0.1:{port}"]
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     output: list[str] = []

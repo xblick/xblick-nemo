@@ -12,7 +12,7 @@ The node stores each object in `<objects-dir>/NeMO/<name>/`. It needs no mesh an
 
 ## One frame
 
-The node reads colour and depth through `blick.rgbd`. It pairs the two by stamp, works at the depth's
+The node reads colour and depth through `xblick.rgbd`. It pairs the two by stamp, works at the depth's
 resolution and undistorts both. Each object of each camera is then in one of two states.
 
 ```mermaid
@@ -61,9 +61,9 @@ For a camera with lens distortion, the pose is in the undistorted pinhole camera
 
 ## Masks for other nodes
 
-With `--segments` the node publishes `instances` and `detections_2d` in the form of durchblick-sam3. The node finds
+With `--segments` the node publishes `instances` and `detections_2d` in the form of xblick-sam3. The node finds
 the masks in the undistorted frame. It maps them back into the colour camera's own image with
-`blick.rgbd.Distorter`, so that the labels fit the distorted image. We tested this on a distorted stream. The
+`xblick.rgbd.Distorter`, so that the labels fit the distorted image. We tested this on a distorted stream. The
 masks reach an IoU of 0.95 against the masks of the same frames without distortion, distorted afterwards.
 
 The `instances` publisher uses the PNG codec, because the image is `mono16`. The node creates the publisher with the

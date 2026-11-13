@@ -1,6 +1,6 @@
 """The node's objects on disk: ``<objects-dir>/NeMO/<name>/`` with ``nemo.pt`` (the neural object: its features and
 surface points, NeMO's frame), ``templates.png`` (the template crops it was made from, side by side) and
-``made.json`` (where they came from). Made by ``durchblick-nemo-make`` (images) or the node (a camera's views)."""
+``made.json`` (where they came from). Made by ``xblick-nemo-make`` (images) or the node (a camera's views)."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def load(objects_dir: Path, name: str, device) -> NeuralObject:
 
     path = folder(objects_dir, name) / "nemo.pt"
     if not path.is_file():
-        raise FileNotFoundError(f"{path}: no such object (durchblick-nemo-make makes one)")
+        raise FileNotFoundError(f"{path}: no such object (xblick-nemo-make makes one)")
     data = torch.load(path, map_location=device, weights_only=True)
     if data.get("format") != FORMAT:
         raise ValueError(f"{path}: format {data.get('format')}, this node reads {FORMAT}")

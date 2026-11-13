@@ -1,12 +1,12 @@
-"""durchblick-nemo: NeMO (nemo.py) on cameras' colour and depth: objects known from a few images of them found,
+"""xblick-nemo: NeMO (nemo.py) on cameras' colour and depth: objects known from a few images of them found,
 segmented and posed (metric, with the depth) in every frame; any number of cameras, started and stopped at run time.
 
-    durchblick-nemo --objects-dir DIR [--object NAME ...] [--camera CAMERA[:color=NAME][:depth=NAME] ...]
+    xblick-nemo --objects-dir DIR [--object NAME ...] [--camera CAMERA[:color=NAME][:depth=NAME] ...]
                     [--node nemo] [--segments] [--autocast bfloat16]
 
 A camera is ``<CAMERA>/<color>`` (rgb8 or bgr8) and ``<CAMERA>/<depth>`` (16UC1 mm in the colour camera's geometry),
-paired by stamp, at the depth's resolution, undistorted (blick.rgbd). An object (``<DIR>/NeMO/<name>/``,
-objects.py; made by durchblick-nemo-make from images or by this node from a camera's views) is, per camera:
+paired by stamp, at the depth's resolution, undistorted (xblick.rgbd). An object (``<DIR>/NeMO/<name>/``,
+objects.py; made by xblick-nemo-make from images or by this node from a camera's views) is, per camera:
 
 * found while lost: NeMO decodes the whole frame in patches (nemo.NeMO.detect), its largest region over
   --mask-threshold of at least --min-pixels is the object (at most every --detect-every seconds per object and camera:
@@ -20,17 +20,17 @@ Published per camera, stamped as the frame, in the colour camera's frame (undist
 * ``<CAMERA>/<node>/detections_3d``  vision_msgs/Detection3DArray: per object its name (class_id; score: the inlier
   ratio) and pose (NeMO's frame scaled to metres in the camera), the box (its surface points' 2-98 % extent: centre
   pose and size), ``id`` the object's instance id (1, 2, ... in --object order, then as added)
-* with --segments, as durchblick-sam3 does (so durchblick-foundationpose can take NeMO as its segmenter,
+* with --segments, as xblick-sam3 does (so xblick-foundationpose can take NeMO as its segmenter,
   ``:segmenter=<node>``): ``<CAMERA>/<node>/instances`` (mono16, the colour image's size, the instance ids) and
   ``<CAMERA>/<node>/detections_2d``, in the colour camera's own image (its size; a camera with lens distortion through
-  blick.rgbd.Distorter: the masks are found in the undistorted frame)
+  xblick.rgbd.Distorter: the masks are found in the undistorted frame)
 
-Queryables: ``<node>/cameras`` ({"start": SPEC} | {"stop": CAMERA}; durchblick-nemo-objects cameras) and
+Queryables: ``<node>/cameras`` ({"start": SPEC} | {"stop": CAMERA}; xblick-nemo-objects cameras) and
 ``<node>/objects`` ({"add": NAME} | {"remove": NAME} | {"make": {"camera": CAMERA, "name": NAME, "label": LABEL |
-"sam_id": ID, "views": 4, "min_angle": 15, "timeout": 60}}; durchblick-nemo-objects): make collects the camera's
+"sam_id": ID, "views": 4, "min_angle": 15, "timeout": 60}}; xblick-nemo-objects): make collects the camera's
 next views of the object at least ``min_angle`` degrees apart seen from it (Durchblick's collect_views: the camera's
 pose from <camera>/tf; move the camera or the object), the object's mask in each from the camera's segmenter (its
-spec's ``:segmenter=NAME``, e.g. a durchblick-sam3 instance: by its label, the largest such instance, or by its id),
+spec's ``:segmenter=NAME``, e.g. an xblick-sam3 instance: by its label, the largest such instance, or by its id),
 and makes, saves and adds the object.
 """
 
@@ -44,12 +44,12 @@ import threading
 import time
 from dataclasses import dataclass, field
 
-import blick as db
 import numpy as np
-from blick import node, topics
-from blick.paths import expand_path
-from blick.rgbd import CameraSpec, Distorter, FramePreparer, RGBDInputs, collect_views
-from blick.session import add_arguments, open_from_args
+import xblick as db
+from xblick import node, topics
+from xblick.paths import expand_path
+from xblick.rgbd import CameraSpec, Distorter, FramePreparer, RGBDInputs, collect_views
+from xblick.session import add_arguments, open_from_args
 
 NODE = "nemo"
 CAMERAS = "cameras"
@@ -72,7 +72,7 @@ class Camera:
     instances: object = None  # with --segments: created with the first frame (the colour camera_info)
     distorter: object = None  # with --segments and lens distortion: the frames' labels back into the colour image
     distorter_key: object = None
-    report: object = None  # blick.node.Reporter
+    report: object = None  # xblick.node.Reporter
     tracks: dict = field(default_factory=dict)
     last_stamp: int | None = None
 
@@ -108,7 +108,7 @@ LIVE = {"mask_threshold": {"range": (0.0, 1.0, 0.01)},
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="durchblick-nemo", description=__doc__,
+    parser = argparse.ArgumentParser(prog="xblick-nemo", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--objects-dir", required=True, help="where the objects are (<DIR>/NeMO/<name>/)")
     parser.add_argument("--object", action="append", default=[],
@@ -117,7 +117,7 @@ def main(argv=None) -> int:
                         help="CAMERA[:color=NAME][:depth=NAME][:segmenter=NAME] (repeated; also at run time)")
     parser.add_argument("--node", default=NODE)
     parser.add_argument("--segments", action="store_true",
-                        help="also publish instances and detections_2d (a segmenter for durchblick-foundationpose)")
+                        help="also publish instances and detections_2d (a segmenter for xblick-foundationpose)")
     parser.add_argument("--autocast", choices=["bfloat16", "none"], default="bfloat16",
                         help="NeMO's decoder in bfloat16 (the default: as accurate as float32 on the benchmark, the "
                              "whole-frame search 160 -> 61 ms) or float32 (none)")
@@ -175,7 +175,7 @@ def main(argv=None) -> int:
         parser.error("--camera: a camera given twice")
 
     # DINOv2 without xFormers: slower, the same
-    node.start("durchblick-nemo", ignore=["xFormers is not available"], max_hz=args.max_hz, local=args.local)
+    node.start("xblick-nemo", ignore=["xFormers is not available"], max_hz=args.max_hz, local=args.local)
 
     import cv2  # noqa: PLC0415
     import torch  # noqa: PLC0415
@@ -202,7 +202,7 @@ def main(argv=None) -> int:
             instance_ids.setdefault(name, len(instance_ids) + 1)
             for camera in cameras.values():
                 camera.tracks[name] = Track()
-        print(f"durchblick-nemo: {name} (instance {instance_ids[name]})", flush=True)
+        print(f"xblick-nemo: {name} (instance {instance_ids[name]})", flush=True)
 
     def remove(name: str):
         with lock:
@@ -230,7 +230,7 @@ def main(argv=None) -> int:
                             FramePreparer(device),
                             db.DetectionPublisher(session, topics.detections(spec.camera, args.node, "detections_3d"),
                                                   db.Detection3DArray))
-            camera.report = node.Reporter(session, spec.camera, args.node, "durchblick-nemo",
+            camera.report = node.Reporter(session, spec.camera, args.node, "xblick-nemo",
                                           log_prefix=f"{spec.camera}: ", max_hz=args.max_hz)
             camera.report.watch(camera.inputs)
             if args.segments:
@@ -238,7 +238,7 @@ def main(argv=None) -> int:
                     session, topics.detections(spec.camera, args.node, "detections_2d"), db.Detection2DArray)
             camera.tracks = {n: Track() for n in loaded}
             cameras[spec.camera] = camera
-        print(f"durchblick-nemo: reading {spec} ({', '.join(spec.keys.values())})", flush=True)
+        print(f"xblick-nemo: reading {spec} ({', '.join(spec.keys.values())})", flush=True)
 
     def stop(name: str):
         with lock:
@@ -252,7 +252,7 @@ def main(argv=None) -> int:
             camera.detections_2d.close()
         if camera.instances is not None:
             camera.instances.close()
-        print(f"durchblick-nemo: stopped {name}", flush=True)
+        print(f"xblick-nemo: stopped {name}", flush=True)
 
     for spec in specs:
         start(spec)
@@ -274,7 +274,7 @@ def main(argv=None) -> int:
             raise ValueError(f"{camera.spec}: no segmenter (its spec's :segmenter=NAME) for the views' masks")
         views = collect_views(session, camera.spec, n_views, device, instance=sam_id, label=label,
                               min_angle=min_angle, timeout=timeout, min_pixels=args.min_pixels, local=args.local,
-                              log=lambda line: print(f"durchblick-nemo: {name}: {line}", flush=True))
+                              log=lambda line: print(f"xblick-nemo: {name}: {line}", flush=True))
         crops = [crop_images(v.frame.rgb.float() / 255.0, [square_box(mask=v.mask.cpu().numpy())],
                              mode="bicubic")[0].clamp(0, 1) for v in views]
         features, points = nemo.encode(torch.stack(crops))
@@ -353,17 +353,17 @@ def main(argv=None) -> int:
                 if name not in now:
                     add(name)
         except (FileNotFoundError, ValueError) as error:  # gone since the check: what is loaded stays the list
-            print(f"durchblick-nemo: parameter object: {error}", flush=True)
+            print(f"xblick-nemo: parameter object: {error}", flush=True)
         for name in now - set(wanted):
             remove(name)
         follow()
-        print(f"durchblick-nemo: objects {applied[0]} (parameter object)", flush=True)
+        print(f"xblick-nemo: objects {applied[0]} (parameter object)", flush=True)
 
     applied = [sorted(loaded)]
     # answered in the loop, between frames (not in Zenoh's threads: make waits for views)
     cameras_queryable = session.declare_queryable(topics.check_name(f"{args.node}/{CAMERAS}"))
     objects_queryable = session.declare_queryable(topics.check_name(f"{args.node}/{OBJECTS}"))
-    print(f"durchblick-nemo: objects {sorted(loaded)} of {objects_dir}; {args.node}/{CAMERAS}, {args.node}/{OBJECTS}",
+    print(f"xblick-nemo: objects {sorted(loaded)} of {objects_dir}; {args.node}/{CAMERAS}, {args.node}/{OBJECTS}",
           flush=True)
 
     def process(camera: Camera, frame, stamp: int):
@@ -425,7 +425,7 @@ def main(argv=None) -> int:
 
     def publish_segments(camera: Camera, frame, stamp, header, labels, found2d):
         """The instances in the colour camera's own image (its size; with lens distortion through
-        blick.rgbd.Distorter), the 2D boxes from them."""
+        xblick.rgbd.Distorter), the 2D boxes from them."""
         info = camera.inputs.readers["color"].subscriber.camera_info
         if camera.distorter_key != camera.prepare.model_key:  # the first frame, or the camera's model changed
             u = camera.prepare.undistorter
@@ -514,13 +514,13 @@ def query(node: str, part: str, payload, timeout: float, args) -> dict:
             time.sleep(0.2)
     finally:
         session.close()
-    raise SystemExit(f"{key}: no answer within {timeout} s (is durchblick-nemo running?)")
+    raise SystemExit(f"{key}: no answer within {timeout} s (is xblick-nemo running?)")
 
 
 def objects_client(argv=None) -> int:
-    """durchblick-nemo-objects [add NAME | remove NAME | make CAMERA NAME (--label L | --sam-id ID) | cameras [start
+    """xblick-nemo-objects [add NAME | remove NAME | make CAMERA NAME (--label L | --sam-id ID) | cameras [start
     SPEC | stop CAMERA]] [--node nemo]: the node's objects (loaded, available) or cameras, or changes them."""
-    parser = argparse.ArgumentParser(prog="durchblick-nemo-objects", description=objects_client.__doc__)
+    parser = argparse.ArgumentParser(prog="xblick-nemo-objects", description=objects_client.__doc__)
     parser.add_argument("action", nargs="?", choices=["add", "remove", "make", "cameras"], default=None)
     parser.add_argument("targets", nargs="*")
     parser.add_argument("--label")

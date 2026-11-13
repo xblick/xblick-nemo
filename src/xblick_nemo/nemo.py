@@ -37,7 +37,7 @@ def install_dinov2(dinov2_dir: Path):
     if not (dinov2_dir / "hubconf.py").is_file():
         raise FileNotFoundError(f"{dinov2_dir}/hubconf.py: missing (tools/setup.sh clones DINOv2)")
     hub_load = torch.hub.load
-    if getattr(hub_load, "durchblick_redirect", False):
+    if getattr(hub_load, "xblick_redirect", False):
         return
 
     def load(repo_or_dir, model, *args, source="github", **kwargs):
@@ -46,7 +46,7 @@ def install_dinov2(dinov2_dir: Path):
                                "from GitHub is redirected (to weights/dinov2)")
         return hub_load(str(dinov2_dir), model, *args, source="local", pretrained=False, **kwargs)
 
-    load.durchblick_redirect = True
+    load.xblick_redirect = True
     torch.hub.load = load
 
 

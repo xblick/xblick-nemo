@@ -10,7 +10,7 @@ An object is a directory `<objects-dir>/NeMO/<name>/`. You make it in one of two
 ### From image files
 
 ```bash
-.venv/bin/durchblick-nemo-make torch --objects-dir ~/.local/share/durchblick/objects \
+.venv/bin/xblick-nemo-make torch --objects-dir ~/.local/share/xblick/objects \
     --images a.png b.png c.png d.png --masks a_mask.png b_mask.png c_mask.png d_mask.png
 ```
 
@@ -28,14 +28,14 @@ Take the images from around the object. Give one mask per image, in which non-ze
 ### From a camera
 
 ```bash
-.venv/bin/durchblick-nemo-objects make robot/camera mug --label mug --views 4 --min-angle 15
+.venv/bin/xblick-nemo-objects make robot/camera mug --label mug --views 4 --min-angle 15
 ```
 
 The node collects the next views of the camera and takes the object's mask in each view from a segmenter. It then
 makes, saves and adds the object. Three conditions apply.
 
 1. The node reads the camera with a segmenter, for example `--camera robot/camera:segmenter=sam3`. The
-   segmenter is a durchblick-sam3 instance on the camera's colour stream.
+   segmenter is an xblick-sam3 instance on the camera's colour stream.
 2. You select the instance with `--label` or with `--sam-id`. With a label, the node takes the largest instance of
    that label.
 3. The views are at least `--min-angle` degrees apart, seen from the object. Move the camera or the object. The node
@@ -46,7 +46,7 @@ The node makes the object in a thread of its own, so it continues to process fra
 ## Start the node
 
 ```bash
-.venv/bin/durchblick-nemo --objects-dir ~/.local/share/durchblick/objects --object torch \
+.venv/bin/xblick-nemo --objects-dir ~/.local/share/xblick/objects --object torch \
     --camera robot/rc_visard:color=left:depth=ffs/depth
 ```
 
@@ -55,7 +55,7 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 
 | Camera | Spec |
 | --- | --- |
-| Roboception rc_visard with the depth of durchblick-fast-foundationstereo | `robot/rc_visard:color=left:depth=ffs/depth` |
+| Roboception rc_visard with the depth of xblick-fast-foundationstereo | `robot/rc_visard:color=left:depth=ffs/depth` |
 | Azure Kinect | `robot/camera:depth=depth_to_color` |
 | a camera with a segmenter for `make` | `robot/camera:segmenter=sam3` |
 
@@ -94,19 +94,19 @@ The report states the rate in effect.
 With `--local auto`, the node reads a camera on the same host from its CUDA ring when that ring is on the node's GPU.
 Otherwise it reads the host ring in shared memory. `shm` and `cuda` force one transport. With `cuda`, the node stops
 when the camera offers no CUDA ring. The start log and every report state the transport of each stream. Durchblick's
-page on [transports](https://github.com/xblick/durchblick/blob/main/docs/concepts/transports.md) explains the choices.
+page on [transports](https://github.com/xblick/xblick/blob/main/docs/concepts/transports.md) explains the choices.
 
 ## The client at run time
 
 | Command | Effect |
 | --- | --- |
-| `durchblick-nemo-objects` | Lists the loaded and the available objects. |
-| `durchblick-nemo-objects add NAME` | Loads an object from the objects directory. |
-| `durchblick-nemo-objects remove NAME` | Removes an object from the node. |
-| `durchblick-nemo-objects make CAMERA NAME --label LABEL` | Makes an object from the camera's views. `--sam-id ID` replaces the label. |
-| `durchblick-nemo-objects cameras` | Lists the cameras. |
-| `durchblick-nemo-objects cameras start SPEC` | Starts a camera. |
-| `durchblick-nemo-objects cameras stop CAMERA` | Stops a camera. |
+| `xblick-nemo-objects` | Lists the loaded and the available objects. |
+| `xblick-nemo-objects add NAME` | Loads an object from the objects directory. |
+| `xblick-nemo-objects remove NAME` | Removes an object from the node. |
+| `xblick-nemo-objects make CAMERA NAME --label LABEL` | Makes an object from the camera's views. `--sam-id ID` replaces the label. |
+| `xblick-nemo-objects cameras` | Lists the cameras. |
+| `xblick-nemo-objects cameras start SPEC` | Starts a camera. |
+| `xblick-nemo-objects cameras stop CAMERA` | Stops a camera. |
 
 The client accepts `--views` (default 4), `--min-angle` (default 15 degrees), `--node`, `--timeout` (default 90 s)
 and the session options.
@@ -120,15 +120,15 @@ The queryables take the same requests as JSON.
 
 A `make` request takes `"sam_id": ID` in place of `"label"`.
 
-## As a segmenter for durchblick-foundationpose
+## As a segmenter for xblick-foundationpose
 
-Start the node with `--segments`. Then give durchblick-foundationpose the camera as `--camera CAMERA:segmenter=nemo`.
+Start the node with `--segments`. Then give xblick-foundationpose the camera as `--camera CAMERA:segmenter=nemo`.
 The node publishes the masks in the colour camera's own image, with the lens distortion of that camera.
 
 ## Without a camera
 
 You can feed the node from a simulation, as the benchmark in [accuracy.md](accuracy.md) does. You can also replay a recording
-with `blick play <recording.mcap> --loop`. `blick rerun` shows the results.
+with `xblick play <recording.mcap> --loop`. `xblick rerun` shows the results.
 
 ## Tests
 
@@ -147,5 +147,5 @@ Every option is also a parameter of the node `nemo`. The live ones change while 
 `mask_threshold`, `conf_threshold`, `inlier_distance`, `min_inliers`, `min_inlier_ratio`, `min_pixels`,
 `detect_every`; the tables mark them. The others are read-only and apply at the next start, where `--param
 NAME:=VALUE` or `--params-file FILE` set them. `object` is the list of objects to find; the read-only parameter
-`library` lists the objects in the objects directory. Durchblick's terminal interface (`blick`, tab Parameters) and
-`blick param` show them.
+`library` lists the objects in the objects directory. Durchblick's terminal interface (`xblick`, tab Parameters) and
+`xblick param` show them.

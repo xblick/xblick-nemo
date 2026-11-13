@@ -8,7 +8,7 @@ from the simulation, status of 2026-11-01.
 Setup:
 
 - A simulated scene with seven objects of our own object set. None of them is in YCB.
-- The camera is the Roboception pair with the depth of durchblick-fast-foundationstereo.
+- The camera is the Roboception pair with the depth of xblick-fast-foundationstereo.
 - The crops use masks of the true silhouette, so the benchmark measures the pose alone.
 - The templates are 4 frames of a first recording. The queries are every other frame in which the object is visible.
 - We align a method's object frame to the true frame once per object. Per query we compute ADD-S and ADD in
@@ -44,7 +44,7 @@ Setup: the turned scene at 10 frames a second. The node detects and tracks on it
 - Every pose is below 10 % of the object's diameter.
 - The node finds each object in 71 to 100 % of the frames. The front row leaves the image while the head sweeps.
 
-## As the segmenter of durchblick-foundationpose
+## As the segmenter of xblick-foundationpose
 
 Setup: the same live scene, the node with `--segments`, FoundationPose with the objects' true meshes from that
 object set.
