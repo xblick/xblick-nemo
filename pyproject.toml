@@ -1,0 +1,59 @@
+[project]
+name = "durchblick-nemo"
+version = "0.1.0"
+description = "NeMO (few-shot segmentation and 6D pose from a few images of an object) as a Durchblick node, metric with the depth"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "David Schneider" }]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # blick 0.4.0 is the core renamed from durchblick. The node needs what durchblick 0.3.64 has: compressed point
+    # clouds (0.3.64), RVL depth (0.3.62), ring keys with the host (0.3.59), the options as parameters and the services
+    # in a daemon thread (0.3.56), a frame's partners read with it (0.3.44), .rgbd (streams, collect_views,
+    # Distorter, waiting), .paths, .logs, node (0.3.23)
+    "blick>=0.4,<0.5",
+    "torch>=2.7",
+    "torchvision",
+    "numpy>=1.26",
+    "opencv-python-headless>=4.8",
+    "pillow>=10",
+    # NeMO's imports (third_party/nemo/src/nemolib; its own package pins plotting libraries not used here)
+    "einops>=0.7",
+    "omegaconf>=2.3",
+    "matplotlib>=3.8",
+    "plotly>=5",  # nemolib/__init__ imports its visualisation module
+]
+
+[project.scripts]
+durchblick-nemo = "durchblick_nemo.node:main"
+durchblick-nemo-objects = "durchblick_nemo.node:objects_client"
+durchblick-nemo-make = "durchblick_nemo.make:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6", "trimesh>=4", "scipy>=1.11"]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv]
+index-strategy = "unsafe-best-match"
+
+[tool.uv.sources]
+"blick" = { git = "https://github.com/xblick/durchblick", branch = "main" }
+"torch" = { index = "pytorch-cu130" }
+"torchvision" = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
