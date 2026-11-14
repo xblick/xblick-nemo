@@ -82,6 +82,8 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 | `--device NAME` | `cuda` | Selects the GPU. |
 | `--max-hz X` | `20` | Takes at most this many colour frames per second and camera. `0` or `none` takes every frame. |
 | `--local MODE` | `auto` | Selects the transport for a camera on this host: `auto`, `shm` or `cuda`. |
+| `--no-download` | off | Ends the node at once when the checkpoint is missing, and names it. The node makes nothing. |
+| `--download-only` | off | Joins the missing checkpoint from the submodule's shards, checks its SHA-256 and ends. The node needs no camera, Zenoh router or GPU for it, and `--objects-dir` may be left out. |
 | `--connect`, `--listen`, `--config` | the host's Zenoh router | Select the Zenoh session, as in every Durchblick program. |
 
 ### The frame rate
@@ -140,6 +142,7 @@ with `xblick play <recording.mcap> --loop`. `xblick rerun` shows the results.
 | File | Needs | What it tests |
 | --- | --- | --- |
 | `test_helpers.py` | CPU | crops and their pixels, Umeyama's fit, the RANSAC with 30 % outliers, the objects' files |
+| `test_weights.py` | CPU | The checkpoint's entry, the join from shards, no network use and no file written when the checkpoint exists, a missing submodule, a wrong checksum, Ctrl-C and SIGTERM, two processes at once, the progress in a log file, `--download-only` and `--no-download` (with a local HTTP server for the shared download code) |
 | `test_nemo.py` | a CUDA device and `weights/` | An object from three images of NeMO's mug finds the mug in the fourth image and in a whole image. |
 
 ## Parameters
@@ -149,4 +152,4 @@ Every option is also a parameter of the node `nemo`. The live ones change while 
 `detect_every`; the tables mark them. The others are read-only and apply at the next start, where `--param
 NAME:=VALUE` or `--params-file FILE` set them. `object` is the list of objects to find; the read-only parameter
 `library` lists the objects in the objects directory. Durchblick's terminal interface (`xblick`, tab Parameters) and
-`xblick param` show them.
+`xblick param` show them. `--download-only` is a mode of the command line and has no parameter.

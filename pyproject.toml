@@ -1,6 +1,6 @@
 [project]
 name = "xblick-nemo"
-version = "0.2.0"
+version = "0.2.1"
 description = "NeMO (few-shot segmentation and 6D pose from a few images of an object) as a Durchblick node, metric with the depth"
 readme = "README.md"
 license = "Apache-2.0"

@@ -6,7 +6,8 @@
 Each image is cropped square around its mask's or box's extent (1.4 times its longer side), or, with neither, to its
 centred square (as NeMO's own capture does: the object in the middle, filling much of the image). Written to
 ``<DIR>/NeMO/NAME/`` (objects.py); the node loads it with ``--object NAME`` or at run time (xblick-nemo-objects add
-NAME). From a camera's stream instead: xblick-nemo-objects make (the node collects the views).
+NAME). From a camera's stream instead: xblick-nemo-objects make (the node collects the views). A missing checkpoint
+is joined from its shards first, as the node does at its start (weights.py).
 """
 
 from __future__ import annotations
@@ -39,6 +40,12 @@ def main(argv=None) -> int:
     from .nemo import NeMO, crop_images, square_box  # noqa: PLC0415
 
     objects.folder(Path(args.objects_dir), args.name)  # checks the name before the model loads
+    from . import weights  # noqa: PLC0415
+
+    try:
+        weights.ensure(weights.needed())
+    except weights.WeightsError as error:
+        return weights.fail(error)
     device = torch.device(args.device)
     crops = []
     for i, path in enumerate(args.images):

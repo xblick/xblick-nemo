@@ -37,8 +37,22 @@ With `--segments`, xblick-foundationpose can use this node as its segmenter (`--
 tools/setup.sh
 ```
 
-The script fetches NeMO's code and checkpoint, DINOv2's code and the Python environment in `.venv`. You can run it
-again, and it then does only what changed. After the setup, the node needs no network.
+The script fetches NeMO's code and checkpoint, DINOv2's code and the Python environment in `.venv`. Then it runs
+`xblick-nemo --download-only`, which joins the checkpoint's shards from the submodule into `weights/checkpoint.pth`
+and checks its SHA-256. You can run the script again, and it then does only what changed. After the setup, the node
+needs no network.
+
+The node itself also joins a missing checkpoint at its start, before it loads the model. It prints NeMO's terms, the
+file and its size first. The checkpoint comes from the submodule, so this step needs no network. The submodule and
+DINOv2's code come only from `tools/setup.sh`. A preparation script makes the checkpoint without a start:
+
+```bash
+.venv/bin/xblick-nemo --download-only
+```
+
+`--download-only` needs no camera, no Zenoh router and no GPU, and it exits with 0 when the checkpoint is complete.
+A machine that must never start such a step on its own, such as a robot, starts the node with `--no-download`. The
+node then ends at once when the checkpoint is missing, and it names the file.
 
 ## Run
 
@@ -63,6 +77,8 @@ The options that most users change:
 | `--segments` | off | Also publishes `instances` and `detections_2d`. |
 | `--max-hz` | `20` | Limits the colour frames per second and camera. `0` or `none` takes every frame. |
 | `--local` | `auto` | Selects the transport for a camera on this host: `auto`, `shm` or `cuda`. |
+| `--no-download` | off | Ends the node at once when the checkpoint is missing. The node makes nothing. |
+| `--download-only` | off | Makes the missing checkpoint, checks it and ends. `--objects-dir` may be left out. |
 
 You change objects and cameras at run time with one client:
 
@@ -105,6 +121,8 @@ The node needs 10 ms per object and frame. NeMO's own code needs 43 to 93 ms for
 - NeMO's masks overlap the true silhouettes with an IoU of 0.59 to 0.92.
 
 [docs/accuracy.md](docs/accuracy.md) has the benchmark.
+- We joined the real shards with the node, and the result matched the checkpoint's SHA-256. We have not run
+  `tools/setup.sh` from scratch with this version.
 
 ## Documentation
 

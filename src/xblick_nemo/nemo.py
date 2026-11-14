@@ -1,8 +1,9 @@
 """NeMO (github.com/DLR-RM/nemo, DLR, 3DV 2026: "Finding NeMO", Neural Memory Objects): a neural object from a few
 images of it (``NeMO.encode``); for a new image of it, cropped around it, the object's mask and per pixel its surface
 point in the object's frame (``NeMO.decode``). The code: third_party/nemo (a fixed commit, imported from there, not
-installed: its package pins plotting libraries the node does not use); the checkpoint (its shards in the submodule,
-joined into weights/checkpoint.pth) and DINOv2's code at a fixed commit (weights/dinov2) by tools/setup.sh.
+installed: its package pins plotting libraries the node does not use) and DINOv2's code at a fixed commit
+(weights/dinov2) by tools/setup.sh; the checkpoint (its shards in the submodule) joined into weights/checkpoint.pth by
+weights.py, at the node's start when missing.
 
 What the node adds (``pose``): NeMO's object frame is normalised (its points within [-1, 1]^3) and its own pose
 estimate is PnP from the image alone, up to that unknown scale; with the measured depth of the mask's pixels the pose

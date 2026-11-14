@@ -2,7 +2,7 @@
 segmented and posed (metric, with the depth) in every frame; any number of cameras, started and stopped at run time.
 
     xblick-nemo --objects-dir DIR [--object NAME ...] [--camera CAMERA[:color=NAME][:depth=NAME] ...]
-                    [--node nemo] [--segments] [--autocast bfloat16]
+                    [--node nemo] [--segments] [--autocast bfloat16] [--no-download]
 
 A camera is ``<CAMERA>/<color>`` (rgb8 or bgr8) and ``<CAMERA>/<depth>`` (16UC1 mm in the colour camera's geometry),
 paired by stamp, at the depth's resolution, undistorted (xblick.rgbd). An object (``<DIR>/NeMO/<name>/``,
@@ -32,6 +32,10 @@ next views of the object at least ``min_angle`` degrees apart seen from it (Durc
 pose from <camera>/tf; move the camera or the object), the object's mask in each from the camera's segmenter (its
 spec's ``:segmenter=NAME``, e.g. an xblick-sam3 instance: by its label, the largest such instance, or by its id),
 and makes, saves and adds the object.
+
+Weights (weights.py): a missing checkpoint is joined from its shards in the submodule at the start, before the model
+loads; --no-download ends the node instead. ``xblick-nemo --download-only`` only makes and checks it (no camera, no
+Zenoh, no GPU), for preparation scripts. The submodule and DINOv2's code come from tools/setup.sh.
 """
 
 from __future__ import annotations
@@ -50,6 +54,8 @@ from xblick import node, topics
 from xblick.paths import expand_path
 from xblick.rgbd import CameraSpec, Distorter, FramePreparer, RGBDInputs, collect_views
 from xblick.session import add_arguments, open_from_args
+
+from . import weights
 
 NODE = "nemo"
 CAMERAS = "cameras"
@@ -135,12 +141,15 @@ def main(argv=None) -> int:
                              "camera whose depth is stamped apart from its colour needs, one measured Azure Kinect: "
                              "11-17 ms); 0: only equal stamps")
     parser.add_argument("--device", default="cuda")
+    weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
     add_arguments(parser)
     # --max-hz: 20 colour frames/s (about 10 measured; 0: every frame)
     # --local: auto (the CUDA ring on this GPU, else shared memory), shm or cuda
     node.add_arguments(parser, max_hz=20.0, local=("auto", "shm", "cuda"))
     node.Parameters.add_arguments(parser)  # --param NAME:=VALUE, --params-file, --dump-params, --params-read-only
-    args = parser.parse_args(argv)
+    args = weights.parse_args(parser, argv)  # --download-only: --objects-dir not required
+    if args.download_only:
+        return weights.download_only(weights.needed())
     # the options as parameters (the terminal interface shows them): read-only, but LIVE and the objects
     session = open_from_args(args)
     params = node.Parameters(session, args.node)
@@ -153,7 +162,8 @@ def main(argv=None) -> int:
         missing = sorted(set(value) - set(objects.names(args.objects_dir)) - set(loaded))
         return f"{missing}: not in {args.objects_dir}" if missing else None
 
-    params.declare_options(parser, args, live={**LIVE, "object": {"write": check_objects}}, leave_out=("node",))
+    params.declare_options(parser, args, live={**LIVE, "object": {"write": check_objects}},
+                           leave_out=("node", "download_only"))
 
     def library() -> list[str]:
         from . import objects  # noqa: PLC0415 - with the model's imports
@@ -176,6 +186,12 @@ def main(argv=None) -> int:
 
     # DINOv2 without xFormers: slower, the same
     node.start("xblick-nemo", ignore=["xFormers is not available"], max_hz=args.max_hz, local=args.local)
+    try:
+        weights.ensure(weights.needed(), download=not args.no_download)
+    except weights.WeightsError as error:
+        params.close()
+        session.close()
+        return weights.fail(error)
 
     import cv2  # noqa: PLC0415
     import torch  # noqa: PLC0415

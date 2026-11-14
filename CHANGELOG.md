@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.1 (2026-11-14)
+
+- The node and `xblick-nemo-make` join a missing checkpoint from the submodule's shards at their start, before the
+  model loads, and check its SHA-256. They print NeMO's terms, the file and its size first. With the checkpoint there
+  they write no file. Nothing comes from the network: the submodule and DINOv2's code stay with `tools/setup.sh`.
+- `--download-only` makes and checks the checkpoint, then exits 0. It needs no camera, Zenoh router or GPU, and
+  `--objects-dir` may be left out. `tools/setup.sh` calls it after the submodule, `uv sync` and DINOv2.
+- `--no-download` ends a start at once when the checkpoint is missing and names it. It is a read-only parameter.
+- `weights.py` is the one place of the checkpoint (shards, SHA-256 moved from `tools/setup.sh`, size).
+- The join goes to `checkpoint.pth.part` under the lock `weights/.download.lock` and gets its final name after the
+  SHA-256 check. Without the submodule the node names `tools/setup.sh`.
+
 ## 0.2.0 (2026-11-13)
 
 Every name in code, on the wire and on disk is `xblick` now. Only the prose name of the project stays Durchblick.

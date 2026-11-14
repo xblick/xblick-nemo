@@ -75,8 +75,19 @@ NeMO's Python package pins plotting libraries that the node does not need. The n
 from the submodule `third_party/nemo` at a fixed commit. `pyproject.toml` lists only what NeMO's model imports. This
 includes `plotly`, because `nemolib/__init__` imports NeMO's visualisation module.
 
-The checkpoint is in the submodule as shards. `tools/setup.sh` joins them into `weights/checkpoint.pth` and checks
-the SHA-256.
+The checkpoint is in the submodule as shards. `weights.py` joins them into `weights/checkpoint.pth` and checks the
+SHA-256. The node does this at its start when the file is missing, and `--download-only` does it alone.
+`tools/setup.sh` calls `--download-only` after it has fetched the submodule and DINOv2.
+
+When the checkpoint exists, the node opens no network connection and writes no file. When it is missing, the node
+takes the lock `weights/.download.lock` and prints NeMO's terms, the file and its size. It writes the joined file as
+`checkpoint.pth.part` and renames it after the SHA-256 check. A file therefore has its final name only when it is
+complete. A second node that starts at the same time waits for the lock and then finds the file. A wrong SHA-256
+keeps the `.part` file, and the error names it. Ctrl-C or SIGTERM end the join at once with the exit code 130 or 143,
+and the node removes the `.part` file. Without the submodule the node joins nothing and names `tools/setup.sh`. The
+node never runs git. `--no-download` ends the node when the checkpoint is missing. It is a read-only parameter like
+every other start option. `--download-only` is a mode of the command line and has no parameter.
+`weights.parse_args` lifts the requirement of `--objects-dir` when the command line contains `--download-only`.
 
 NeMO's backbone loads DINOv2 through `torch.hub` from the main branch on GitHub, with pretrained weights. This would
 contact GitHub at every start. `nemo.install_dinov2` redirects the call to a clone at a fixed commit in
@@ -85,6 +96,7 @@ refuses any other hub model.
 
 ## Rules of the code
 
-- The node fails with a clear message when weights are missing, a camera spec is wrong or an object does not load.
-  It uses no silent default.
-- The node needs no network at run time. `tools/setup.sh` fetches everything at fixed commits and hashes.
+- The node fails with a clear message when code from the setup is missing, a camera spec is wrong or an object
+  does not load. It uses no silent default.
+- The node needs no network at run time. `tools/setup.sh` fetches the code at fixed commits, and the checkpoint
+  comes from the submodule with its SHA-256.
