@@ -7,7 +7,9 @@ This repository contains no code of the following projects. tools/setup.sh fetch
 
 - NeMO (https://github.com/DLR-RM/nemo), the git submodule third_party/nemo at a fixed commit: code and checkpoint
   shards, which the node joins into weights/checkpoint.pth. MIT License, Copyright (c) 2025 DLR-RM
-  (third_party/nemo/LICENSE).
+  (third_party/nemo/LICENSE). Five files of NeMO's decoder heads (third_party/nemo/src/nemolib/modules/heads/) carry
+  their own header: Copyright (C) 2024-present Naver Corporation, CC BY-NC-SA 4.0 (non-commercial use only). The
+  node uses them.
 - DINOv2 (https://github.com/facebookresearch/dinov2), cloned into weights/dinov2 at a fixed commit as NeMO's
   backbone code. Apache License, Version 2.0, Copyright (c) Meta Platforms, Inc. and affiliates
   (weights/dinov2/LICENSE). NeMO's checkpoint holds the backbone's weights.

@@ -29,7 +29,8 @@ With `--segments`, xblick-foundationpose can use this node as its segmenter (`--
 - `uv`, `git` and Python 3.12.
 - Durchblick's Python package `xblick` 0.5 or newer, below 0.6. The setup installs it from GitHub.
 - A camera with a colour stream and a depth stream in the colour camera's geometry.
-- NeMO's code and checkpoint are under the MIT licence. DINOv2's code is under Apache-2.0.
+- NeMO's code and checkpoint are under the MIT licence, except five files of its decoder heads, which are Naver's
+  under CC BY-NC-SA 4.0 (non-commercial use only). The node uses them. DINOv2's code is under Apache-2.0.
 
 ## Install
 
@@ -141,7 +142,9 @@ Durchblick's pages explain the terms that these pages use:
 
 ## Licence and credits
 
-NeMO is the work of DLR. Its code and checkpoint are under the MIT licence. DINOv2 provides the code of NeMO's
+NeMO is the work of DLR. Its code and checkpoint are under the MIT licence. Five files of its decoder heads
+(`third_party/nemo/src/nemolib/modules/heads/`) carry Naver's header with CC BY-NC-SA 4.0, for non-commercial use
+only, and the node uses them: check whether you may use the node for your purpose. DINOv2 provides the code of NeMO's
 backbone and is under Apache-2.0. `tools/setup.sh` fetches both, and this repository copies nothing of them.
 
 The code of this repository is licensed under the Apache License 2.0 ([LICENSE](LICENSE)). [NOTICE](NOTICE) names

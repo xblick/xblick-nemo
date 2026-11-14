@@ -2,6 +2,9 @@
 
 ## 0.2.1 (2026-11-14)
 
+- Licence statement corrected: five files of NeMO's decoder heads are Naver's under CC BY-NC-SA 4.0 (non-commercial use
+  only), inside the MIT-licensed NeMO repository. README, NOTICE and the notice printed before the checkpoint is made
+  say so.
 - The node and `xblick-nemo-make` join a missing checkpoint from the submodule's shards at their start, before the
   model loads, and check its SHA-256. They print NeMO's terms, the file and its size first. With the checkpoint there
   they write no file. Nothing comes from the network: the submodule and DINOv2's code stay with `tools/setup.sh`.

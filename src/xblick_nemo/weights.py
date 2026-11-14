@@ -38,7 +38,9 @@ CHECKPOINT_SHA256 = "546f9c1d52d0c9688c0f9b076d754f01861a93f6d85c42ecf92171560b0
 CHECKPOINT_SIZE = 823_730_274
 TERMS = """\
 NeMO is the work of DLR, under its terms, and you are the one who uses it:
-  * NeMO's code and checkpoint (github.com/DLR-RM/nemo, the submodule third_party/nemo) are under the MIT licence."""
+  * NeMO's code and checkpoint (github.com/DLR-RM/nemo, the submodule third_party/nemo) are under the MIT licence.
+  * Five files of its decoder heads (nemolib/modules/heads) are Naver's, under CC BY-NC-SA 4.0: non-commercial
+    use only. Whether you may use the node for your purpose is yours to check."""
 
 
 def needed() -> list[Weight]:
