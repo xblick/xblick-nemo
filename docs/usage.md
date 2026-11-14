@@ -5,12 +5,13 @@ you change objects and cameras while the node works. The camera names on this pa
 
 ## Objects
 
-An object is a directory `<objects-dir>/NeMO/<name>/`. You make it in one of two ways.
+An object is a directory `<objects-dir>/NeMO/<name>/`. `<objects-dir>` is the node's data directory,
+`~/.local/share/xblick/nemo/`, unless `--objects-dir` names another. You make it in one of two ways.
 
 ### From image files
 
 ```bash
-.venv/bin/xblick-nemo-make torch --objects-dir ~/.local/share/xblick/objects \
+.venv/bin/xblick-nemo-make torch \
     --images a.png b.png c.png d.png --masks a_mask.png b_mask.png c_mask.png d_mask.png
 ```
 
@@ -19,7 +20,8 @@ Take the images from around the object. Give one mask per image, in which non-ze
 | Option | Effect |
 | --- | --- |
 | `NAME` | the object's name |
-| `--objects-dir DIR` | where the node stores objects (required) |
+| `--objects-dir DIR` | where the node stores objects (default: the data directory, `~/.local/share/xblick/nemo/`) |
+| `--weights-dir DIR` | where NeMO's checkpoint is (default: the cache directory, `~/.cache/xblick/nemo/`) |
 | `--images FILE ...` | the images (required) |
 | `--masks FILE ...` | one mask per image |
 | `--boxes X0,Y0,X1,Y1 ...` | one box in pixels per image, as the alternative to `--masks` |
@@ -47,8 +49,7 @@ The node makes the object in a thread of its own, so it continues to process fra
 ## Start the node
 
 ```bash
-.venv/bin/xblick-nemo --objects-dir ~/.local/share/xblick/objects --object torch \
-    --camera cam/rc_visard:color=left:depth=ffs/depth
+.venv/bin/xblick-nemo --object torch --camera cam/rc_visard:color=left:depth=ffs/depth
 ```
 
 The node needs a Zenoh router on the host. A camera is a colour stream `<CAMERA>/<color>` in `rgb8` or `bgr8` and
@@ -64,7 +65,7 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `--objects-dir DIR` | required | The directory of the objects. The node expands `~` and `${VAR}` in it. |
+| `--objects-dir DIR` | the data directory | The directory of the objects, `~/.local/share/xblick/nemo/` by default. The node expands `~` and `${VAR}` in it. |
 | `--object NAME` | none | Finds this object from the start. You can repeat the option. Live: it changes while the node runs. |
 | `--camera SPEC` | none | Reads this camera from the start. You can repeat the option. |
 | `--node NAME` | `nemo` | Sets the node's part of the topics. |
@@ -84,6 +85,7 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 | `--local MODE` | `auto` | Selects the transport for a camera on this host: `auto`, `shm` or `cuda`. |
 | `--no-download` | off | Ends the node at once when the checkpoint is missing, and names it. The node makes nothing. |
 | `--download-only` | off | Joins the missing checkpoint from the submodule's shards, checks its SHA-256 and ends. The node needs no camera, Zenoh router or GPU for it, and `--objects-dir` may be left out. |
+| `--weights-dir DIR` | the cache directory | The directory of the weights, in place of the node's cache directory `~/.cache/xblick/nemo/`. A start option, read-only as a parameter. |
 | `--connect`, `--listen`, `--config` | the host's Zenoh router | Select the Zenoh session, as in every Durchblick program. |
 
 ### The frame rate
@@ -143,7 +145,7 @@ with `xblick play <recording.mcap> --loop`. `xblick rerun` shows the results.
 | --- | --- | --- |
 | `test_helpers.py` | CPU | crops and their pixels, Umeyama's fit, the RANSAC with 30 % outliers, the objects' files |
 | `test_weights.py` | CPU | The checkpoint's entry, the join from shards, a missing submodule, the node's `STORE`, `--download-only` and `--no-download`, a start that stops after its weights step without a GPU. The download itself: the core's tests |
-| `test_nemo.py` | a CUDA device and `weights/` | An object from three images of NeMO's mug finds the mug in the fourth image and in a whole image. |
+| `test_nemo.py` | a CUDA device and the checkpoint in the cache directory | An object from three images of NeMO's mug finds the mug in the fourth image and in a whole image. |
 
 ## Parameters
 

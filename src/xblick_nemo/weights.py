@@ -23,9 +23,11 @@ from pathlib import Path
 
 from xblick.weights import CHUNK, Store, Weight, WeightsError
 
-from .nemo import REPO, WEIGHTS
+from .nemo import REPO
 
 PROG = "xblick-nemo"
+NODE = "nemo"  # the short name: cache ~/.cache/xblick/nemo, data ~/.local/share/xblick/nemo
+FORMER = REPO / "weights"  # the checkpoint's place before 0.2.3 (the checkout): not used, the store names the move
 SHARDS = REPO / "third_party" / "nemo" / "checkpoints"  # part_aa, part_ab, ...: the checkpoint in git
 REQUIRED = ((SHARDS, "NeMO's checkpoint shards, the submodule third_party/nemo"),)  # (path, what): from tools/setup.sh
 CHECKPOINT_SHA256 = "546f9c1d52d0c9688c0f9b076d754f01861a93f6d85c42ecf92171560b0df780"  # of the submodule's commit
@@ -39,7 +41,7 @@ NeMO is the work of DLR, under its terms, and you are the one who uses it:
 
 def needed() -> list[Weight]:
     """The checkpoint every start reads."""
-    return [Weight(WEIGHTS / "checkpoint.pth", Shards(SHARDS, "part_*"), CHECKPOINT_SIZE, CHECKPOINT_SHA256)]
+    return [Weight(Path("checkpoint.pth"), Shards(SHARDS, "part_*"), CHECKPOINT_SIZE, CHECKPOINT_SHA256)]
 
 
 @dataclass(frozen=True)
@@ -72,4 +74,18 @@ class Shards:
         return digest.hexdigest()
 
 
-STORE = Store(PROG, WEIGHTS, TERMS, REQUIRED, repo=REPO)  # the download (xblick.weights), its lock in WEIGHTS
+def options(args) -> list[str]:
+    """The options that select the weights (and --weights-dir), for the download command the lines name."""
+    return [] + (["--weights-dir", args.weights_dir] if args.weights_dir else [])
+
+
+def store_for(parser, args) -> Store:
+    """STORE at --weights-dir (not given: the node's cache directory); a wrong --weights-dir is an argument error."""
+    try:
+        return STORE.at(args.weights_dir)
+    except ValueError as error:
+        parser.error(f"--weights-dir: {error}")
+
+
+# the download (xblick.weights): the root is the node's cache directory, its lock there
+STORE = Store(PROG, node=NODE, terms=TERMS, required=REQUIRED, repo=REPO, former=[FORMER])

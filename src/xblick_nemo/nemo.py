@@ -2,8 +2,9 @@
 images of it (``NeMO.encode``); for a new image of it, cropped around it, the object's mask and per pixel its surface
 point in the object's frame (``NeMO.decode``). The code: third_party/nemo (a fixed commit, imported from there, not
 installed: its package pins plotting libraries the node does not use) and DINOv2's code at a fixed commit
-(weights/dinov2) by tools/setup.sh; the checkpoint (its shards in the submodule) joined into weights/checkpoint.pth by
-weights.py, at the node's start when missing.
+(third_party/dinov2, a clone) by tools/setup.sh; the checkpoint (its shards in the submodule) joined into
+``checkpoint.pth`` of the node's cache directory (``~/.cache/xblick/nemo``) by weights.py, at the node's start when
+missing.
 
 What the node adds (``pose``): NeMO's object frame is normalised (its points within [-1, 1]^3) and its own pose
 estimate is PnP from the image alone, up to that unknown scale; with the measured depth of the mask's pixels the pose
@@ -22,7 +23,7 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
 CODE = REPO / "third_party" / "nemo" / "src"
-WEIGHTS = REPO / "weights"
+DINOV2 = REPO / "third_party" / "dinov2"  # DINOv2's code at DINOV2_COMMIT, cloned by tools/setup.sh
 DINOV2_REPO = "facebookresearch/dinov2"
 DINOV2_COMMIT = "7764ea0f912e53c92e82eb78a2a1631e92725fc8"  # facebookresearch/dinov2
 CROP = 224  # NeMO's input size
@@ -44,7 +45,7 @@ def install_dinov2(dinov2_dir: Path):
     def load(repo_or_dir, model, *args, source="github", **kwargs):
         if source != "github" or repo_or_dir != DINOV2_REPO:
             raise RuntimeError(f"torch.hub.load({repo_or_dir!r}, {model!r}, source={source!r}): only {DINOV2_REPO} "
-                               "from GitHub is redirected (to weights/dinov2)")
+                               "from GitHub is redirected (to third_party/dinov2)")
         return hub_load(str(dinov2_dir), model, *args, source="local", pretrained=False, **kwargs)
 
     load.xblick_redirect = True
@@ -155,14 +156,17 @@ class Pose:
 class NeMO:
     """NeMO's network on ``device``, loaded once; ``autocast``: run it in bfloat16 (``None``: float32)."""
 
-    def __init__(self, device="cuda", weights: Path = WEIGHTS, autocast: str | None = None):
+    def __init__(self, device, weights: Path, autocast: str | None = None):
+        """``weights``: the directory of ``checkpoint.pth`` (the node's: weights.STORE.root or --weights-dir's)."""
         import torch  # noqa: PLC0415
 
-        checkpoint = weights / "checkpoint.pth"
-        for path in (CODE / "nemolib", checkpoint, weights / "dinov2"):
+        checkpoint = Path(weights) / "checkpoint.pth"
+        for path in (CODE / "nemolib", DINOV2):
             if not path.exists():
                 raise FileNotFoundError(f"{path}: missing (git submodule update --init; tools/setup.sh)")
-        install_dinov2(weights / "dinov2")
+        if not checkpoint.is_file():
+            raise FileNotFoundError(f"{checkpoint}: missing (xblick-nemo --download-only joins it)")
+        install_dinov2(DINOV2)
         if str(CODE) not in sys.path:
             sys.path.insert(0, str(CODE))
         from nemolib.model import Model  # noqa: PLC0415

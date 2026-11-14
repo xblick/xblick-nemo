@@ -8,7 +8,8 @@ metric pose. It also explains how the setup pins NeMO and DINOv2.
 NeMO represents an object as a *neural memory object*. NeMO's encoder turns a few crops of the object, taken from
 around it, into features on surface points of the object. The points are in a normalised frame of the object itself.
 
-The node stores each object in `<objects-dir>/NeMO/<name>/`. It needs no mesh and no text prompt for it.
+The node stores each object in `<objects-dir>/NeMO/<name>/`. `--objects-dir` defaults to the node's data directory,
+`~/.local/share/xblick/nemo/`: the objects are data that a user made, and never part of the cache or the checkout. It needs no mesh and no text prompt for it.
 
 ## One frame
 
@@ -75,24 +76,24 @@ NeMO's Python package pins plotting libraries that the node does not need. The n
 from the submodule `third_party/nemo` at a fixed commit. `pyproject.toml` lists only what NeMO's model imports. This
 includes `plotly`, because `nemolib/__init__` imports NeMO's visualisation module.
 
-The checkpoint is in the submodule as shards. `weights.py` joins them into `weights/checkpoint.pth` and checks the
+The checkpoint is in the submodule as shards. `weights.py` joins them into `~/.cache/xblick/nemo/checkpoint.pth` (the node's cache directory) and checks the
 SHA-256. The node does this at its start when the file is missing, and `--download-only` does it alone.
 `tools/setup.sh` calls `--download-only` after it has fetched the submodule and DINOv2. The lock, the `.part` file and the checks are the
 core's `xblick.weights`. `weights.Shards` is the node's own source in it.
 
 When the checkpoint exists, the node opens no network connection and writes no file. When it is missing, the node
-takes the lock `weights/.download.lock` and prints NeMO's terms, the file and its size. It writes the joined file as
+takes the lock `~/.cache/xblick/nemo/.download.lock` and prints NeMO's terms, the file and its size. It writes the joined file as
 `checkpoint.pth.part` and renames it after the size and SHA-256 checks. A file therefore has its final name only when it is
 complete. A second node that starts at the same time waits for the lock and then finds the file. A wrong SHA-256
 keeps the `.part` file, and the error names it. Ctrl-C or SIGTERM end the join at once with the exit code 130 or 143,
 and the node removes the `.part` file. Without the submodule the node joins nothing and names `tools/setup.sh`. The
 node never runs git. `--no-download` ends the node when the checkpoint is missing. It is a read-only parameter like
 every other start option. `--download-only` is a mode of the command line and has no parameter.
-`xblick.weights.parse_args` lifts the requirement of `--objects-dir` when the command line contains `--download-only`.
+`xblick.weights.parse_args` lifts the requirements of a start when the command line contains `--download-only`.
 
 NeMO's backbone loads DINOv2 through `torch.hub` from the main branch on GitHub, with pretrained weights. This would
 contact GitHub at every start. `nemo.install_dinov2` redirects the call to a clone at a fixed commit in
-`weights/dinov2`. It skips the pretrained weights, because NeMO's checkpoint contains its fine-tuned backbone. It
+`third_party/dinov2`. It skips the pretrained weights, because NeMO's checkpoint contains its fine-tuned backbone. It
 refuses any other hub model.
 
 ## Rules of the code

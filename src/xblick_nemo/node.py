@@ -1,7 +1,7 @@
 """xblick-nemo: NeMO (nemo.py) on cameras' colour and depth: objects known from a few images of them found,
 segmented and posed (metric, with the depth) in every frame; any number of cameras, started and stopped at run time.
 
-    xblick-nemo --objects-dir DIR [--object NAME ...] [--camera CAMERA[:color=NAME][:depth=NAME] ...]
+    xblick-nemo [--objects-dir DIR] [--object NAME ...] [--camera CAMERA[:color=NAME][:depth=NAME] ...]
                     [--node nemo] [--segments] [--autocast bfloat16] [--no-download]
 
 A camera is ``<CAMERA>/<color>`` (rgb8 or bgr8) and ``<CAMERA>/<depth>`` (16UC1 mm in the colour camera's geometry),
@@ -33,9 +33,10 @@ pose from <camera>/tf; move the camera or the object), the object's mask in each
 spec's ``:segmenter=NAME``, e.g. an xblick-sam3 instance: by its label, the largest such instance, or by its id),
 and makes, saves and adds the object.
 
-Weights (weights.py): a missing checkpoint is joined from its shards in the submodule at the start, before the model
-loads; --no-download ends the node instead. ``xblick-nemo --download-only`` only makes and checks it (no camera, no
-Zenoh, no GPU), for preparation scripts. The submodule and DINOv2's code come from tools/setup.sh.
+Weights (weights.py; in the node's cache directory ~/.cache/xblick/nemo, or --weights-dir): a missing checkpoint is
+joined from its shards in the submodule at the start, before the model loads; --no-download ends the node instead.
+``xblick-nemo --download-only`` only makes and checks it (no camera, no Zenoh, no GPU), for preparation scripts. The
+submodule and DINOv2's code come from tools/setup.sh.
 """
 
 from __future__ import annotations
@@ -47,12 +48,13 @@ import sys
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
 import xblick as db
 from xblick import node, topics
 from xblick import weights as xblick_weights
-from xblick.paths import expand_path
+from xblick.paths import data_dir, expand_path
 from xblick.rgbd import CameraSpec, Distorter, FramePreparer, RGBDInputs, collect_views
 from xblick.session import add_arguments, open_from_args
 
@@ -114,10 +116,18 @@ LIVE = {"mask_threshold": {"range": (0.0, 1.0, 0.01)},
         "detect_every": {"range": (0.0, 60.0, 0.1), "unit": "s"}}
 
 
+def objects_dir_of(args) -> Path:
+    """--objects-dir (``${VAR}`` and ``~`` expanded), else the node's data directory: the objects a user made are data,
+    never in the cache or the checkout."""
+    return expand_path(args.objects_dir) if args.objects_dir else data_dir(weights.NODE)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="xblick-nemo", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--objects-dir", required=True, help="where the objects are (<DIR>/NeMO/<name>/)")
+    parser.add_argument("--objects-dir", default=None,
+                        help="where the objects are (<DIR>/NeMO/<name>/; default: the node's data directory, "
+                             "~/.local/share/xblick/nemo or $XBLICK_HOME/data/nemo)")
     parser.add_argument("--object", action="append", default=[],
                         help="an object to find (repeated; at run time: the parameter object, or <node>/objects)")
     parser.add_argument("--camera", action="append", default=[], metavar="SPEC",
@@ -150,7 +160,8 @@ def main(argv=None) -> int:
     node.Parameters.add_arguments(parser)  # --param NAME:=VALUE, --params-file, --dump-params, --params-read-only
     args = xblick_weights.parse_args(parser, argv)  # --download-only: --objects-dir not required
     if args.download_only:
-        return weights.STORE.download_only(weights.needed())
+        return weights.store_for(parser, args).download_only(
+            weights.needed(), options=weights.options(args))
     # the options as parameters (the terminal interface shows them): read-only, but LIVE and the objects
     session = open_from_args(args)
     params = node.Parameters(session, args.node)
@@ -160,8 +171,8 @@ def main(argv=None) -> int:
         """A new object list: refused with the reason if an object is not in the objects directory."""
         from . import objects  # noqa: PLC0415 - with the model's imports
 
-        missing = sorted(set(value) - set(objects.names(args.objects_dir)) - set(loaded))
-        return f"{missing}: not in {args.objects_dir}" if missing else None
+        missing = sorted(set(value) - set(objects.names(objects_dir_of(args))) - set(loaded))
+        return f"{missing}: not in {objects_dir_of(args)}" if missing else None
 
     params.declare_options(parser, args, live={**LIVE, "object": {"write": check_objects}},
                            leave_out=("node", "download_only"))
@@ -169,14 +180,14 @@ def main(argv=None) -> int:
     def library() -> list[str]:
         from . import objects  # noqa: PLC0415 - with the model's imports
 
-        return objects.names(expand_path(args.objects_dir))
+        return objects.names(objects_dir_of(args))
 
     # what the parameter object takes: the objects in the objects directory (made ones too), read at each request
     params.declare("library", [], description="the objects in --objects-dir (object takes their names)", read_only=True,
                    read=library)
     params.check_overrides()
     try:
-        args.objects_dir = expand_path(args.objects_dir)  # ${VAR} and ~ (some launchers pass arguments as they stand)
+        args.objects_dir = objects_dir_of(args)  # ${VAR} and ~ (some launchers pass arguments as they stand)
         specs = [CameraSpec.parse(c) for c in args.camera]
         for spec in specs:
             topics.check_name(spec.camera)
@@ -187,12 +198,14 @@ def main(argv=None) -> int:
 
     # DINOv2 without xFormers: slower, the same
     node.start("xblick-nemo", ignore=["xFormers is not available"], max_hz=args.max_hz, local=args.local)
+    store = weights.store_for(parser, args)  # --weights-dir, also given as a parameter
     try:
-        weights.STORE.ensure(weights.needed(), download=not args.no_download)
+        store.ensure(weights.needed(), download=not args.no_download,
+                     options=weights.options(args))
     except xblick_weights.WeightsError as error:
         params.close()
         session.close()
-        return weights.STORE.fail(error)
+        return store.fail(error)
 
     import cv2  # noqa: PLC0415
     import torch  # noqa: PLC0415
@@ -206,7 +219,7 @@ def main(argv=None) -> int:
     torch.cuda.set_device(device)
     objects_dir = args.objects_dir
     objects_dir.mkdir(parents=True, exist_ok=True)
-    nemo = NeMO(device, autocast=None if args.autocast == "none" else args.autocast)
+    nemo = NeMO(device, store.root, autocast=None if args.autocast == "none" else args.autocast)
     generator = torch.Generator(device=device).manual_seed(0)
     loaded: dict[str, objects.NeuralObject] = {}
     instance_ids: dict[str, int] = {}
