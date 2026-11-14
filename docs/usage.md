@@ -28,13 +28,14 @@ Take the images from around the object. Give one mask per image, in which non-ze
 ### From a camera
 
 ```bash
-.venv/bin/xblick-nemo-objects make test/camera mug --label mug --views 4 --min-angle 15
+.venv/bin/xblick-nemo-objects make cam/azurekinect mug --label mug --views 4 --min-angle 15
 ```
 
 The node collects the next views of the camera and takes the object's mask in each view from a segmenter. It then
 makes, saves and adds the object. Three conditions apply.
 
-1. The node reads the camera with a segmenter, for example `--camera test/camera:segmenter=sam3`. The
+1. The node reads the camera with a segmenter, for example
+   `--camera cam/azurekinect:depth=depth_to_color:segmenter=sam3`. The
    segmenter is an xblick-sam3 instance on the camera's colour stream.
 2. You select the instance with `--label` or with `--sam-id`. With a label, the node takes the largest instance of
    that label.
@@ -57,7 +58,7 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 | --- | --- |
 | Roboception rc_visard with the depth of xblick-fast-foundationstereo | `cam/rc_visard:color=left:depth=ffs/depth` |
 | Azure Kinect | `cam/azurekinect:depth=depth_to_color` |
-| a camera with a segmenter for `make` | `test/camera:segmenter=sam3` |
+| a camera with a segmenter for `make` | `cam/azurekinect:depth=depth_to_color:segmenter=sam3` |
 
 ## Options of the node
 

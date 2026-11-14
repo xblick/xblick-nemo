@@ -68,11 +68,11 @@ You change objects and cameras at run time with one client:
 
 ```bash
 .venv/bin/xblick-nemo-objects                    # lists the loaded and the available objects
-.venv/bin/xblick-nemo-objects make test/camera mug --label mug --views 4 --min-angle 15
+.venv/bin/xblick-nemo-objects make cam/azurekinect mug --label mug --views 4 --min-angle 15
 ```
 
 The `make` command builds an object from the next views of a camera. That camera needs a segmenter for the masks,
-for example `--camera test/camera:segmenter=sam3`.
+for example `--camera cam/azurekinect:depth=depth_to_color:segmenter=sam3`.
 
 Every option is also a parameter of the node `nemo`, which Durchblick's terminal interface (`xblick`, tab Parameters)
 and `xblick param` show. The objects to find are the parameter `object`, a list of object names. A new list
