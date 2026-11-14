@@ -1,6 +1,10 @@
 # xblick-nemo
 
 [![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+[![tests](https://github.com/xblick/xblick-nemo/actions/workflows/ci.yml/badge.svg)](https://github.com/xblick/xblick-nemo/actions/workflows/ci.yml)
+[![licence](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
+[![device](https://img.shields.io/badge/needs-NVIDIA%20GPU-76b900)](README.md)
+[![model](https://img.shields.io/badge/model-non--commercial%20use%20only-orange)](NOTICE)
 
 This [Durchblick](https://github.com/xblick/xblick) node finds, segments and poses objects that
 it knows from a few images. It needs no mesh and no text prompt, and it works on any camera with depth, at about
