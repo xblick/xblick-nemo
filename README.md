@@ -1,5 +1,7 @@
 # xblick-nemo
 
+[![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+
 This [Durchblick](https://github.com/xblick/xblick) node finds, segments and poses objects that
 it knows from a few images. It needs no mesh and no text prompt, and it works on any camera with depth, at about
 10 ms per object and frame.
@@ -66,11 +68,11 @@ You change objects and cameras at run time with one client:
 
 ```bash
 .venv/bin/xblick-nemo-objects                    # lists the loaded and the available objects
-.venv/bin/xblick-nemo-objects make robot/camera mug --label mug --views 4 --min-angle 15
+.venv/bin/xblick-nemo-objects make test/camera mug --label mug --views 4 --min-angle 15
 ```
 
 The `make` command builds an object from the next views of a camera. That camera needs a segmenter for the masks,
-for example `--camera robot/camera:segmenter=sam3`.
+for example `--camera test/camera:segmenter=sam3`.
 
 Every option is also a parameter of the node `nemo`, which Durchblick's terminal interface (`xblick`, tab Parameters)
 and `xblick param` show. The objects to find are the parameter `object`, a list of object names. A new list
