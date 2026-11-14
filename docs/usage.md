@@ -142,7 +142,7 @@ with `xblick play <recording.mcap> --loop`. `xblick rerun` shows the results.
 | File | Needs | What it tests |
 | --- | --- | --- |
 | `test_helpers.py` | CPU | crops and their pixels, Umeyama's fit, the RANSAC with 30 % outliers, the objects' files |
-| `test_weights.py` | CPU | The checkpoint's entry, the join from shards, no network use and no file written when the checkpoint exists, a missing submodule, a wrong checksum, Ctrl-C and SIGTERM, two processes at once, the progress in a log file, `--download-only` and `--no-download` (with a local HTTP server for the shared download code) |
+| `test_weights.py` | CPU | The checkpoint's entry, the join from shards, a missing submodule, the node's `STORE`, `--download-only` and `--no-download`, a start that stops after its weights step without a GPU. The download itself: the core's tests |
 | `test_nemo.py` | a CUDA device and `weights/` | An object from three images of NeMO's mug finds the mug in the fourth image and in a whole image. |
 
 ## Parameters

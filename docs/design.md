@@ -77,7 +77,8 @@ includes `plotly`, because `nemolib/__init__` imports NeMO's visualisation modul
 
 The checkpoint is in the submodule as shards. `weights.py` joins them into `weights/checkpoint.pth` and checks the
 SHA-256. The node does this at its start when the file is missing, and `--download-only` does it alone.
-`tools/setup.sh` calls `--download-only` after it has fetched the submodule and DINOv2.
+`tools/setup.sh` calls `--download-only` after it has fetched the submodule and DINOv2. The lock, the `.part` file and the checks are the
+core's `xblick.weights`. `weights.Shards` is the node's own source in it.
 
 When the checkpoint exists, the node opens no network connection and writes no file. When it is missing, the node
 takes the lock `weights/.download.lock` and prints NeMO's terms, the file and its size. It writes the joined file as
@@ -87,7 +88,7 @@ keeps the `.part` file, and the error names it. Ctrl-C or SIGTERM end the join a
 and the node removes the `.part` file. Without the submodule the node joins nothing and names `tools/setup.sh`. The
 node never runs git. `--no-download` ends the node when the checkpoint is missing. It is a read-only parameter like
 every other start option. `--download-only` is a mode of the command line and has no parameter.
-`weights.parse_args` lifts the requirement of `--objects-dir` when the command line contains `--download-only`.
+`xblick.weights.parse_args` lifts the requirement of `--objects-dir` when the command line contains `--download-only`.
 
 NeMO's backbone loads DINOv2 through `torch.hub` from the main branch on GitHub, with pretrained weights. This would
 contact GitHub at every start. `nemo.install_dinov2` redirects the call to a clone at a fixed commit in

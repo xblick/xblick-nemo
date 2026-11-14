@@ -2,7 +2,7 @@
 
 xblick-nemo: NeMO (DLR, few-shot "neural memory objects") as a Durchblick node. Objects known from a few images
 (no mesh, no text prompt) are found, segmented and posed in every frame of any RGB-D camera. The node fits NeMO's
-object coordinates to the measured depth (Sim3). Version 0.2.1, tested in the simulation only. Human documentation:
+object coordinates to the measured depth (Sim3). Version 0.2.2, tested in the simulation only. Human documentation:
 `README.md` (entry) and `docs/` (usage, design, accuracy, performance). Transport-wide traps (Zenoh sessions
 and routers, CUDA rings, looped playback, hanging tests) are in the core repository's AGENTS.md
 (`github.com/xblick/xblick`). This file does not repeat the README.
@@ -11,8 +11,8 @@ and routers, CUDA rings, looped playback, hanging tests) are in the core reposit
 
 ```bash
 tools/setup.sh                                    # submodule, uv sync, DINOv2 clone, then --download-only; idempotent
-.venv/bin/python -m pytest tests                  # 30 tests; test_nemo.py needs a CUDA device and weights/
-.venv/bin/python -m pytest tests/test_weights.py  # CPU, 7 s: the join, the lock, --download-only/--no-download
+.venv/bin/python -m pytest tests                  # 18 tests; test_nemo.py needs a CUDA device and weights/
+.venv/bin/python -m pytest tests/test_weights.py  # CPU, 4 s: the node's files and its start up to the weights (the download: the core's tests)
 .venv/bin/xblick-nemo --download-only             # checkpoint joined from the submodule's shards if missing, SHA-256
 .venv/bin/python -m pytest tests/test_helpers.py  # CPU-only part: crops, Umeyama, RANSAC, object files
 .venv/bin/ruff check src tests                    # lint; 120 columns and rules in pyproject.toml, third_party excluded
@@ -33,13 +33,13 @@ tools/check_references.sh                         # no internal references (patt
 - Fail fast. Missing code from the setup (`weights.REQUIRED`, `install_dinov2`), a bad camera spec, an object that does not load: raise with a message that says what
   to do (as `nemo.install_dinov2` and `objects.load` do). No silent defaults.
 - Stay offline at run time. `tools/setup.sh` fetches the code at fixed commits. `weights.py` is the one place of the
-  checkpoint (shards, `CHECKPOINT_SHA256`, size, `TERMS`); `weights.ensure` runs at the start (node and
+  checkpoint (shards, `CHECKPOINT_SHA256`, size, `TERMS`); `weights.STORE.ensure` runs at the start (node and
   `xblick-nemo-make`) before the model loads. Checkpoint there: no file written (`test_weights.py` checks it).
 - The join: `checkpoint.pth.part`, renamed after the SHA-256 check, under the lock `weights/.download.lock`. Never let
   a partial or unchecked file get its final name. `download_only` is in `leave_out` of `declare_options`;
-  `no_download` is a read-only parameter. `weights.parse_args` lifts `required` of `--objects-dir` for
+  `no_download` is a read-only parameter. `xblick.weights.parse_args` lifts `required` of `--objects-dir` for
   `--download-only` (spelled out).
-- Core pin: `xblick>=0.5.0,<0.6` (the core's Python package, `durchblick` up to 0.3 and `blick` in 0.4; uses
+- Core pin: `xblick>=0.5.3,<0.6` (the core's Python package, `durchblick` up to 0.3 and `blick` in 0.4; uses
   `xblick.rgbd`: `CameraSpec`, `RGBDInputs`, `FramePreparer`, `collect_views`, `Distorter`; `xblick.paths`,
   `xblick.node`). For a core change needed here: release the core, raise the pin and the rev, `uv lock`.
 - Keep options, topics and numbers in README and `docs/` in sync with the code in the same commit. Follow the core's
@@ -69,7 +69,7 @@ tools/check_references.sh                         # no internal references (patt
 | `src/xblick_nemo/nemo.py` | NeMO: `install_dinov2`, crops, `encode`/`decode`/`detect`, Umeyama + RANSAC `pose` |
 | `src/xblick_nemo/node.py` | the node (cameras, tracks, publishing, queryables) and `objects_client` |
 | `src/xblick_nemo/objects.py` | neural objects on disk: `<objects-dir>/NeMO/<name>/` |
-| `src/xblick_nemo/weights.py` | the checkpoint (`Shards`, SHA-256), `REQUIRED`, `TERMS`, `ensure`, `--download-only`/`--no-download`; from `Weight` on the same in every node |
+| `src/xblick_nemo/weights.py` | the checkpoint (`Shards`, SHA-256), `REQUIRED`, `TERMS`, `STORE` (the core's `xblick.weights.Store`: the download, `--download-only`/`--no-download`) |
 | `src/xblick_nemo/make.py` | `xblick-nemo-make`: an object from images and masks |
 | `third_party/nemo` | NeMO's code and checkpoint shards (submodule, fixed commit) |
 | `weights/` | `checkpoint.pth` (joined by the node), `.download.lock`, `dinov2/` (cloned by `tools/setup.sh`); not in git |

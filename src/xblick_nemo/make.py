@@ -40,12 +40,14 @@ def main(argv=None) -> int:
     from .nemo import NeMO, crop_images, square_box  # noqa: PLC0415
 
     objects.folder(Path(args.objects_dir), args.name)  # checks the name before the model loads
+    from xblick import weights as xblick_weights  # noqa: PLC0415
+
     from . import weights  # noqa: PLC0415
 
     try:
-        weights.ensure(weights.needed())
-    except weights.WeightsError as error:
-        return weights.fail(error)
+        weights.STORE.ensure(weights.needed())
+    except xblick_weights.WeightsError as error:
+        return weights.STORE.fail(error)
     device = torch.device(args.device)
     crops = []
     for i, path in enumerate(args.images):
