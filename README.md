@@ -48,10 +48,10 @@ First make an object from a few images of it and their masks. Then start the nod
 .venv/bin/xblick-nemo-make torch --objects-dir ~/.local/share/xblick/objects \
     --images a.png b.png c.png d.png --masks a_mask.png b_mask.png c_mask.png d_mask.png
 .venv/bin/xblick-nemo --objects-dir ~/.local/share/xblick/objects --object torch \
-    --camera robot/rc_visard:color=left:depth=ffs/depth
+    --camera cam/rc_visard:color=left:depth=ffs/depth
 ```
 
-The camera name `robot/rc_visard` is an example. A camera spec has the form
+The camera name `cam/rc_visard` is an example. A camera spec has the form
 `CAMERA[:color=NAME][:depth=NAME][:segmenter=NAME]`, with the defaults `color` and `depth`.
 
 The options that most users change:

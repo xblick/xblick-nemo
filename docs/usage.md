@@ -47,7 +47,7 @@ The node makes the object in a thread of its own, so it continues to process fra
 
 ```bash
 .venv/bin/xblick-nemo --objects-dir ~/.local/share/xblick/objects --object torch \
-    --camera robot/rc_visard:color=left:depth=ffs/depth
+    --camera cam/rc_visard:color=left:depth=ffs/depth
 ```
 
 The node needs a Zenoh router on the host. A camera is a colour stream `<CAMERA>/<color>` in `rgb8` or `bgr8` and
@@ -55,8 +55,8 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 
 | Camera | Spec |
 | --- | --- |
-| Roboception rc_visard with the depth of xblick-fast-foundationstereo | `robot/rc_visard:color=left:depth=ffs/depth` |
-| Azure Kinect | `test/camera:depth=depth_to_color` |
+| Roboception rc_visard with the depth of xblick-fast-foundationstereo | `cam/rc_visard:color=left:depth=ffs/depth` |
+| Azure Kinect | `cam/azurekinect:depth=depth_to_color` |
 | a camera with a segmenter for `make` | `test/camera:segmenter=sam3` |
 
 ## Options of the node
