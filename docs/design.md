@@ -81,7 +81,7 @@ SHA-256. The node does this at its start when the file is missing, and `--downlo
 
 When the checkpoint exists, the node opens no network connection and writes no file. When it is missing, the node
 takes the lock `weights/.download.lock` and prints NeMO's terms, the file and its size. It writes the joined file as
-`checkpoint.pth.part` and renames it after the SHA-256 check. A file therefore has its final name only when it is
+`checkpoint.pth.part` and renames it after the size and SHA-256 checks. A file therefore has its final name only when it is
 complete. A second node that starts at the same time waits for the lock and then finds the file. A wrong SHA-256
 keeps the `.part` file, and the error names it. Ctrl-C or SIGTERM end the join at once with the exit code 130 or 143,
 and the node removes the `.part` file. Without the submodule the node joins nothing and names `tools/setup.sh`. The

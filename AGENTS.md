@@ -11,7 +11,7 @@ and routers, CUDA rings, looped playback, hanging tests) are in the core reposit
 
 ```bash
 tools/setup.sh                                    # submodule, uv sync, DINOv2 clone, then --download-only; idempotent
-.venv/bin/python -m pytest tests                  # 27 tests; test_nemo.py needs a CUDA device and weights/
+.venv/bin/python -m pytest tests                  # 30 tests; test_nemo.py needs a CUDA device and weights/
 .venv/bin/python -m pytest tests/test_weights.py  # CPU, 7 s: the join, the lock, --download-only/--no-download
 .venv/bin/xblick-nemo --download-only             # checkpoint joined from the submodule's shards if missing, SHA-256
 .venv/bin/python -m pytest tests/test_helpers.py  # CPU-only part: crops, Umeyama, RANSAC, object files

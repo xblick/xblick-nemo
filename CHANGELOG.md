@@ -14,6 +14,7 @@
 - `weights.py` is the one place of the checkpoint (shards, SHA-256 moved from `tools/setup.sh`, size).
 - The join goes to `checkpoint.pth.part` under the lock `weights/.download.lock` and gets its final name after the
   SHA-256 check. Without the submodule the node names `tools/setup.sh`.
+- The joined checkpoint is also checked against its exact size, before the SHA-256.
 
 ## 0.2.0 (2026-11-13)
 
