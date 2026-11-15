@@ -2,7 +2,7 @@
 
 xblick-nemo: NeMO (DLR, few-shot "neural memory objects") as a Durchblick node. Objects known from a few images
 (no mesh, no text prompt) are found, segmented and posed in every frame of any RGB-D camera. The node fits NeMO's
-object coordinates to the measured depth (Sim3). Version 0.2.4, tested in the simulation only. Human documentation:
+object coordinates to the measured depth (Sim3). Version 0.2.5, tested in the simulation only. Human documentation:
 `README.md` (entry) and `docs/` (usage, design, accuracy, performance). Transport-wide traps (Zenoh sessions
 and routers, CUDA rings, looped playback, hanging tests) are in the core repository's AGENTS.md
 (`github.com/xblick/xblick`). This file does not repeat the README.
@@ -52,7 +52,7 @@ tools/check_references.sh                         # no internal references (patt
   a partial or unchecked file get its final name. `download_only` is in `leave_out` of `declare_options`;
   `no_download` is a read-only parameter. `xblick.weights.parse_args` lifts `required` options for
   `--download-only` (spelled out).
-- Core pin: `xblick>=0.5.5,<0.6` (the core's Python package, `durchblick` up to 0.3 and `blick` in 0.4; uses
+- Core pin: `xblick>=0.5.11,<0.6` (the core's Python package, `durchblick` up to 0.3 and `blick` in 0.4; uses
   `xblick.rgbd`: `CameraSpec`, `RGBDInputs`, `FramePreparer`, `collect_views`, `Distorter`; `xblick.paths`,
   `xblick.node`). For a core change needed here: release the core, raise the pin and the rev, `uv lock`.
 - Keep options, topics and numbers in README and `docs/` in sync with the code in the same commit. Follow the core's
@@ -71,7 +71,7 @@ tools/check_references.sh                         # no internal references (patt
 | Node crashes on the first compressed subscriber of `instances` | Default JPEG codec on a 16-bit image | The `instances` publisher uses `codec="png"`. It is created with the first frame (colour `camera_info`) and follows camera changes |
 | Labels do not fit a distorted camera's image | Masks are found in the undistorted frame | `--segments` maps them back with `xblick.rgbd.Distorter`. Do not publish undistorted labels into a distorted camera's image |
 | Depth input of a camera | The node needs depth in the colour camera's geometry | `<camera>/<depth>` is 16UC1 mm in the colour geometry, paired by stamp (`--history` frames). Azure Kinect: `depth_to_color`. rc_visard: `ffs/depth` on `color=left` |
-| `make` times out | No segmenter on the camera spec, or no camera motion | `:segmenter=NAME` (an xblick-sam3 instance); views at least `--min-angle` apart seen from the object; camera pose from `<camera>/tf`. `make` has its own thread; the frame loop goes on |
+| `make` times out | No segmenter on the camera spec, or no camera motion | `:segmenter=NAME` (an xblick-sam3 instance); views at least `--min-angle` apart seen from the object; camera pose from `<camera>/tf_static` or `<camera>/tf`. `make` has its own thread; the frame loop goes on |
 | Two sessions do not see each other | A session given only `--connect` does not listen, and the router does not route between such sessions | Start nodes without endpoints (they find the PC's router) |
 | First query after opening a session gets no reply | Queryables need a moment | `query()` repeats until its timeout |
 

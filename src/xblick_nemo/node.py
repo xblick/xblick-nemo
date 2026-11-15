@@ -30,12 +30,12 @@ Queryables: ``<node>/cameras`` ({"start": SPEC} | {"stop": CAMERA}; xblick-nemo-
 "sam_id": ID, "views": 4, "min_angle": 15, "timeout": 60}}; xblick-nemo-objects). They answer at once, while the
 model works: a start, stop, add or remove is checked and answered with the cameras or objects as they are from the
 next frame on, and the frame loop applies it then. make collects the camera's next views of the object at least
-``min_angle`` degrees apart seen from it (Durchblick's collect_views: the camera's pose from <camera>/tf; move the
-camera or the object), the object's mask in each from the camera's segmenter (its spec's ``:segmenter=NAME``, e.g. an
-xblick-sam3 instance: by its label, the largest such instance, or by its id), makes and saves the object, adds it
-from the next frame on, and answers then: within the request's ``timeout`` and the time to encode and save, in a
-thread of its own (the frames go on). The cameras can be given at the start (--camera) or later on ``<node>/cameras``
-alone.
+``min_angle`` degrees apart seen from it (Durchblick's collect_views: the camera's pose from <camera>/tf_static and
+<camera>/tf; move the camera or the object), the object's mask in each from the camera's segmenter (its spec's
+``:segmenter=NAME``, e.g. an xblick-sam3 instance: by its label, the largest such instance, or by its id), makes and
+saves the object, adds it from the next frame on, and answers then: within the request's ``timeout`` and the time to
+encode and save, in a thread of its own (the frames go on). The cameras can be given at the start (--camera) or later
+on ``<node>/cameras`` alone.
 
 Weights (weights.py; in the node's cache directory ~/.cache/xblick/nemo, or --weights-dir): a missing checkpoint is
 joined from its shards in the submodule at the start, before the model loads; --no-download ends the node instead.
@@ -59,6 +59,7 @@ import xblick as db
 from xblick import mps, node, topics
 from xblick import weights as xblick_weights
 from xblick.camera import check_local
+from xblick.history import PAIR_MAX_OFFSET_NS
 from xblick.paths import data_dir, expand_path
 from xblick.rgbd import CameraSpec, Distorter, FramePreparer, RGBDInputs, collect_views
 from xblick.session import add_arguments, open_from_args, replies
@@ -68,7 +69,6 @@ from . import weights
 NODE = "nemo"
 CAMERAS = "cameras"
 OBJECTS = "objects"
-MAX_OFFSET_MS = 20.0  # --max-offset-ms: one capture's colour and depth (an Azure Kinect: up to 17 ms apart), not two
 
 
 def parse_device(text: str) -> str:
@@ -161,7 +161,7 @@ def main(argv=None) -> int:
     parser.add_argument("--min-pixels", type=int, default=200, help="smallest found region [px at the depth's size]")
     parser.add_argument("--detect-every", type=float, default=0.5, help="[s] between searches for a lost object")
     parser.add_argument("--history", type=int, default=10, help="frames of each stream kept for pairing by stamp")
-    parser.add_argument("--max-offset-ms", type=float, default=MAX_OFFSET_MS,
+    parser.add_argument("--max-offset-ms", type=float, default=PAIR_MAX_OFFSET_NS / 1e6,
                         help="pair a colour frame with the nearest depth frame at most this far apart, else skip it "
                              "(counted); 20 covers the Azure Kinect's colour and depth of one capture (up to 17 ms "
                              "apart) and the rc_visard's (equal stamps), and pairs no neighbouring frame of a 30 or "

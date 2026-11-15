@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.5 (2026-11-15)
+
+A fixed camera's pose for `make`.
+
+### Changed
+
+- The node needs `xblick>=0.5.11,<0.6`. Its `collect_views` looks the camera's pose up on `<camera>/tf_static` and
+  `<camera>/tf`, so `make` works with a fixed camera (`xblick cam --pose`, its pose on `tf_static`) too. The object
+  then has to move between the views.
+- `--max-offset-ms` takes its default, 20 ms, from the core (`history.PAIR_MAX_OFFSET_NS`).
+
+Compatible with earlier clients: nothing on the wire changed.
+
 ## 0.2.4 (2026-11-15)
 
 Queries answered at once, a fixed pairing offset, a fixed GPU, and the MPS and transport checks of the other nodes.

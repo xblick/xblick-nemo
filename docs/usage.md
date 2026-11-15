@@ -42,7 +42,8 @@ makes, saves and adds the object. Three conditions apply.
 2. You select the instance with `--label` or with `--sam-id`. With a label, the node takes the largest instance of
    that label.
 3. The views are at least `--min-angle` degrees apart, seen from the object. Move the camera or the object. The node
-   reads the camera's pose from `<camera>/tf`. Without motion the command ends with a timeout.
+   reads the camera's pose from `<camera>/tf_static` (a fixed camera, `xblick cam --pose`) or `<camera>/tf` (a
+   moving one). Without motion the command ends with a timeout.
 
 The node makes the object in a thread of its own, so it continues to process frames.
 
