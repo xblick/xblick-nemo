@@ -27,11 +27,15 @@ Published per camera, stamped as the frame, in the colour camera's frame (undist
 
 Queryables: ``<node>/cameras`` ({"start": SPEC} | {"stop": CAMERA}; xblick-nemo-objects cameras) and
 ``<node>/objects`` ({"add": NAME} | {"remove": NAME} | {"make": {"camera": CAMERA, "name": NAME, "label": LABEL |
-"sam_id": ID, "views": 4, "min_angle": 15, "timeout": 60}}; xblick-nemo-objects): make collects the camera's
-next views of the object at least ``min_angle`` degrees apart seen from it (Durchblick's collect_views: the camera's
-pose from <camera>/tf; move the camera or the object), the object's mask in each from the camera's segmenter (its
-spec's ``:segmenter=NAME``, e.g. an xblick-sam3 instance: by its label, the largest such instance, or by its id),
-and makes, saves and adds the object.
+"sam_id": ID, "views": 4, "min_angle": 15, "timeout": 60}}; xblick-nemo-objects). They answer at once, while the
+model works: a start, stop, add or remove is checked and answered with the cameras or objects as they are from the
+next frame on, and the frame loop applies it then. make collects the camera's next views of the object at least
+``min_angle`` degrees apart seen from it (Durchblick's collect_views: the camera's pose from <camera>/tf; move the
+camera or the object), the object's mask in each from the camera's segmenter (its spec's ``:segmenter=NAME``, e.g. an
+xblick-sam3 instance: by its label, the largest such instance, or by its id), makes and saves the object, adds it
+from the next frame on, and answers then: within the request's ``timeout`` and the time to encode and save, in a
+thread of its own (the frames go on). The cameras can be given at the start (--camera) or later on ``<node>/cameras``
+alone.
 
 Weights (weights.py; in the node's cache directory ~/.cache/xblick/nemo, or --weights-dir): a missing checkpoint is
 joined from its shards in the submodule at the start, before the model loads; --no-download ends the node instead.
@@ -52,17 +56,28 @@ from pathlib import Path
 
 import numpy as np
 import xblick as db
-from xblick import node, topics
+from xblick import mps, node, topics
 from xblick import weights as xblick_weights
+from xblick.camera import check_local
 from xblick.paths import data_dir, expand_path
 from xblick.rgbd import CameraSpec, Distorter, FramePreparer, RGBDInputs, collect_views
-from xblick.session import add_arguments, open_from_args
+from xblick.session import add_arguments, open_from_args, replies
 
 from . import weights
 
 NODE = "nemo"
 CAMERAS = "cameras"
 OBJECTS = "objects"
+MAX_OFFSET_MS = 20.0  # --max-offset-ms: one capture's colour and depth (an Azure Kinect: up to 17 ms apart), not two
+
+
+def parse_device(text: str) -> str:
+    """``--device``: cuda (GPU 0) or cuda:N, as ``cuda:N``."""
+    if text == "cuda":
+        return "cuda:0"
+    if text.startswith("cuda:") and text[5:].isdigit():
+        return text
+    raise argparse.ArgumentTypeError(f"{text!r}: cuda (GPU 0) or cuda:N")
 
 
 @dataclass
@@ -146,12 +161,13 @@ def main(argv=None) -> int:
     parser.add_argument("--min-pixels", type=int, default=200, help="smallest found region [px at the depth's size]")
     parser.add_argument("--detect-every", type=float, default=0.5, help="[s] between searches for a lost object")
     parser.add_argument("--history", type=int, default=10, help="frames of each stream kept for pairing by stamp")
-    parser.add_argument("--max-offset-ms", type=float, default=None,
-                        help="pair a colour frame with the nearest depth frame this close (default: half the "
-                             "depth's frame period, measured: each colour frame with its nearest depth frame, as a "
-                             "camera whose depth is stamped apart from its colour needs, one measured Azure Kinect: "
-                             "11-17 ms); 0: only equal stamps")
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--max-offset-ms", type=float, default=MAX_OFFSET_MS,
+                        help="pair a colour frame with the nearest depth frame at most this far apart, else skip it "
+                             "(counted); 20 covers the Azure Kinect's colour and depth of one capture (up to 17 ms "
+                             "apart) and the rc_visard's (equal stamps), and pairs no neighbouring frame of a 30 or "
+                             "15 Hz depth stream (default: %(default)s); 0: only equal stamps")
+    parser.add_argument("--device", type=parse_device, default="cuda:0",
+                        help="the GPU: cuda (GPU 0) or cuda:N; a GPU that cannot be used is an error (default: cuda:0)")
     xblick_weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
     add_arguments(parser)
     # --max-hz: 20 colour frames/s (about 10 measured; 0: every frame)
@@ -162,6 +178,9 @@ def main(argv=None) -> int:
     if args.download_only:
         return weights.store_for(parser, args).download_only(
             weights.needed(), options=weights.options(args))
+    if args.max_offset_ms < 0:
+        parser.error("--max-offset-ms: not negative")
+    mps.check()  # with CUDA_MPS_PIPE_DIRECTORY (MPS meant) its daemon has to run: else stop here
     # the options as parameters (the terminal interface shows them): read-only, but LIVE and the objects
     session = open_from_args(args)
     params = node.Parameters(session, args.node)
@@ -214,8 +233,12 @@ def main(argv=None) -> int:
     from .nemo import NeMO, crop_images, crop_pixels, square_box  # noqa: PLC0415
 
     device = torch.device(args.device)
-    if device.index is None:
-        device = torch.device("cuda", torch.cuda.current_device())
+    if device.index >= torch.cuda.device_count():  # no CUDA, or not that many GPUs: one line, never another device
+        print(f"xblick-nemo: --device {args.device}: no such GPU ({torch.cuda.device_count()} visible)",
+              file=sys.stderr, flush=True)
+        params.close()
+        session.close()
+        return 1
     torch.cuda.set_device(device)
     objects_dir = args.objects_dir
     objects_dir.mkdir(parents=True, exist_ok=True)
@@ -223,7 +246,9 @@ def main(argv=None) -> int:
     generator = torch.Generator(device=device).manual_seed(0)
     loaded: dict[str, objects.NeuralObject] = {}
     instance_ids: dict[str, int] = {}
-    lock = threading.Lock()  # loaded, cameras: the queryables' threads and the loop
+    lock = threading.Lock()  # loaded, cameras, accepted, camera_changes, instance_ids: the queryables and the loop
+    # the objects key and the make thread change the parameter object (read, changed, set: one at a time)
+    object_lock = threading.Lock()
 
     def add(name: str):
         obj = objects.load(objects_dir, name, device)
@@ -249,7 +274,9 @@ def main(argv=None) -> int:
         except (FileNotFoundError, ValueError) as error:
             raise SystemExit(str(error)) from None
 
-    max_offset_ns = None if args.max_offset_ms is None else round(args.max_offset_ms * 1e6)
+    max_offset_ns = round(args.max_offset_ms * 1e6)
+    accepted: dict[str, CameraSpec] = {s.camera: s for s in specs}  # the cameras from the next frame on
+    camera_changes: list[tuple[str, object]] = []  # ("start", spec) or ("stop", name), accepted, for the loop
 
     def start(spec: CameraSpec):
         with lock:
@@ -313,10 +340,25 @@ def main(argv=None) -> int:
                             "instance": views[0].instance, "min_angle": min_angle,
                             "views": [{"stamp_ns": v.stamp, "cam_in_world": None if v.cam_in_world is None
                                        else v.cam_in_world.tolist()} for v in views]})
-        add(name)
+        with object_lock:  # found from the next frame on (the loop loads it), as an add on the objects key
+            set_objects(wanted_objects() + [name] if name not in wanted_objects() else wanted_objects())
         return {"made": name, "path": str(out), "views": len(views)}
 
+    def wanted_objects() -> list[str]:
+        """The objects to find from the next frame on: the parameter object (the loop loads them)."""
+        return list(dict.fromkeys(params["object"]))
+
+    def set_objects(names: list[str]):
+        """The parameter object (under object_lock): what the objects key and make accepted; ids given now."""
+        with lock:
+            for name in names:
+                instance_ids.setdefault(name, len(instance_ids) + 1)
+        result = params.set("object", names)
+        if not result.successful:
+            raise ValueError(result.reason)
+
     def answer(query, handler):
+        """A query answered and dropped at once: the handler checks and accepts, the loop applies."""
         try:
             payload = query.payload.to_string() if query.payload is not None else ""
             result = handler(json.loads(payload) if payload.strip() else None)
@@ -324,77 +366,114 @@ def main(argv=None) -> int:
         except Exception as error:  # noqa: BLE001 - the asker gets the error, the node goes on
             query.reply_err(f"{type(error).__name__}: {error}")
 
-    def answer_objects(query):
-        """make takes seconds (the views): in a thread of its own, the frames go on; the rest at once."""
-        payload = query.payload.to_string() if query.payload is not None else ""
-        if payload.strip() and "make" in json.loads(payload):
-            threading.Thread(target=answer, args=(query, on_objects), name="make", daemon=True).start()
+    def make_and_answer(query, request):
+        """make, in a thread of its own (it waits for views): its answer is its result."""
+        try:
+            query.reply(query.key_expr, json.dumps(make(request)))
+        except Exception as error:  # noqa: BLE001 - the asker gets the error, the node goes on
+            query.reply_err(f"{type(error).__name__}: {error}")
+
+    def on_cameras_query(query):
+        answer(query, on_cameras)
+
+    def on_objects_query(query):
+        try:
+            payload = query.payload.to_string() if query.payload is not None else ""
+            request = json.loads(payload) if payload.strip() else None
+        except json.JSONDecodeError as error:
+            query.reply_err(f"{type(error).__name__}: {error}")
+            return
+        if isinstance(request, dict) and set(request) == {"make"}:
+            threading.Thread(target=make_and_answer, args=(query, request["make"]), name="make", daemon=True).start()
         else:
             answer(query, on_objects)
 
     def on_cameras(request):
-        if request is not None:
-            if set(request) - {"start", "stop"} or len(request) != 1:
-                raise ValueError('{"start": SPEC} or {"stop": CAMERA} expected')
-            if "start" in request:
-                spec = CameraSpec.parse(str(request["start"]))
-                topics.check_name(spec.camera)
-                start(spec)
-            else:
-                stop(str(request["stop"]))
+        """A camera to start or stop, checked and accepted (the loop starts or stops it); the cameras then."""
         with lock:
-            return {"cameras": [str(c.spec) for c in cameras.values()]}
+            if request is not None:
+                if not isinstance(request, dict) or set(request) - {"start", "stop"} or len(request) != 1:
+                    raise ValueError('{"start": SPEC} or {"stop": CAMERA} expected')
+                if "start" in request:
+                    spec = CameraSpec.parse(str(request["start"]))
+                    topics.check_name(spec.camera)
+                    if spec.camera in accepted:
+                        raise ValueError(f"{spec.camera}: already read (as {accepted[spec.camera]}); stop it first")
+                    accepted[spec.camera] = spec
+                    camera_changes.append(("start", spec))
+                else:
+                    name = str(request["stop"])
+                    if name not in accepted:
+                        raise ValueError(f"{name}: not read; read are {sorted(accepted)}")
+                    del accepted[name]
+                    camera_changes.append(("stop", name))
+            return {"cameras": [str(s) for s in accepted.values()]}
 
     def on_objects(request):
-        if request is not None:
-            if set(request) - {"add", "remove", "make"} or len(request) != 1:
-                raise ValueError('{"add": NAME}, {"remove": NAME} or {"make": {...}} expected')
-            if "add" in request:
-                add(str(request["add"]))
-            elif "remove" in request:
-                remove(str(request["remove"]))
-            else:
-                made = make(request["make"])
-                follow()
-                return made
-            follow()
-        with lock:
-            return {"objects": {n: instance_ids[n] for n in loaded}, "available": objects.names(objects_dir)}
+        """An object to add or remove, checked and accepted (the loop loads or drops it); the objects then."""
+        with object_lock:
+            wanted = wanted_objects()
+            if request is not None:
+                if not isinstance(request, dict) or set(request) - {"add", "remove"} or len(request) != 1:
+                    raise ValueError('{"add": NAME}, {"remove": NAME} or {"make": {...}} expected')
+                if "add" in request:
+                    name = str(request["add"])
+                    objects.folder(objects_dir, name)
+                    if name not in objects.names(objects_dir):
+                        raise FileNotFoundError(f"{name}: not in {objects_dir}")
+                    wanted = wanted if name in wanted else wanted + [name]
+                else:
+                    name = str(request["remove"])
+                    if name not in wanted:
+                        raise ValueError(f"{name}: not loaded")
+                    wanted = [n for n in wanted if n != name]
+                set_objects(wanted)
+            with lock:
+                return {"objects": {n: instance_ids[n] for n in wanted}, "available": objects.names(objects_dir)}
 
-    def follow():
-        """The parameter object follows the objects loaded (after the objects key's add, remove, make)."""
+    def apply_cameras():
+        """The cameras accepted on the cameras key, started or stopped (in this thread, between frames)."""
         with lock:
-            names = sorted(loaded)
-        applied[0] = names
-        params.set("object", names)
+            changes = list(camera_changes)
+            camera_changes.clear()
+        for what, value in changes:
+            if what == "start":
+                start(value)
+            else:
+                stop(value)
 
     def apply_parameters():
-        """The live parameters' values now, in this thread: the thresholds at once; a new object list loads the new
-        objects and drops the others."""
+        """The live parameters' values now, in this thread: the thresholds at once; a new object list (the parameter
+        object, or the objects key's add, remove, make) loads the new objects and drops the others."""
         for name in LIVE:
             setattr(args, name, params[name])
-        wanted = list(dict.fromkeys(params["object"]))
+        wanted = wanted_objects()
         if sorted(wanted) == applied[0]:
             return
         with lock:
             now = set(loaded)
-        try:
-            for name in wanted:
-                if name not in now:
+        failed = []
+        for name in wanted:
+            if name not in now:
+                try:
                     add(name)
-        except (FileNotFoundError, ValueError) as error:  # gone since the check: what is loaded stays the list
-            print(f"xblick-nemo: parameter object: {error}", flush=True)
+                except (FileNotFoundError, ValueError) as error:  # gone since the check: not found
+                    print(f"xblick-nemo: object {name}: {error}", flush=True)
+                    failed.append(name)
         for name in now - set(wanted):
             remove(name)
-        follow()
-        print(f"xblick-nemo: objects {applied[0]} (parameter object)", flush=True)
+        applied[0] = sorted(set(wanted) - set(failed))
+        if failed:
+            with object_lock:
+                set_objects([n for n in wanted_objects() if n not in failed])
+        print(f"xblick-nemo: objects {applied[0]}", flush=True)
 
     applied = [sorted(loaded)]
-    # answered in the loop, between frames (not in Zenoh's threads: make waits for views)
-    cameras_queryable = session.declare_queryable(topics.check_name(f"{args.node}/{CAMERAS}"))
-    objects_queryable = session.declare_queryable(topics.check_name(f"{args.node}/{OBJECTS}"))
-    print(f"xblick-nemo: objects {sorted(loaded)} of {objects_dir}; {args.node}/{CAMERAS}, {args.node}/{OBJECTS}",
-          flush=True)
+    # answered at once in Zenoh's threads from the state kept here; the loop applies what they accepted
+    cameras_queryable = session.declare_queryable(topics.check_name(f"{args.node}/{CAMERAS}"), on_cameras_query)
+    objects_queryable = session.declare_queryable(topics.check_name(f"{args.node}/{OBJECTS}"), on_objects_query)
+    print(f"xblick-nemo: objects {sorted(loaded)} of {objects_dir}; {args.node}/{CAMERAS}, {args.node}/{OBJECTS}; "
+          f"model on {args.device}", flush=True)
 
     def process(camera: Camera, frame, stamp: int):
         with lock:
@@ -498,10 +577,7 @@ def main(argv=None) -> int:
         while True:
             wake.wait(timeout=0.1)
             wake.clear()
-            while (q := cameras_queryable.try_recv()) is not None:
-                answer(q, on_cameras)
-            while (q := objects_queryable.try_recv()) is not None:
-                answer_objects(q)
+            apply_cameras()
             apply_parameters()
             with lock:
                 active = list(cameras.values())
@@ -513,6 +589,8 @@ def main(argv=None) -> int:
                 camera.last_stamp = stamp
                 frame = camera.prepare(camera.inputs, stamp)
                 if frame is not None:
+                    for reader in camera.inputs.readers.values():  # --local cuda without a CUDA ring: an error
+                        check_local(reader.subscriber, args.local)
                     process(camera, frame, stamp)
             for camera in active:
                 if camera.report.due():
@@ -537,7 +615,8 @@ def query(node: str, part: str, payload, timeout: float, args) -> dict:
     end = time.monotonic() + timeout
     try:
         while time.monotonic() < end:  # right after the session opens a query can reach no queryable yet: ask again
-            for reply in session.get(key, payload=payload, timeout=max(1.0, end - time.monotonic())):
+            # replies(): Zenoh does not always end a query at its timeout (the core's AGENTS.md, "Traps")
+            for reply in replies(session, key, max(1.0, end - time.monotonic()), payload=payload):
                 if reply.ok is not None:
                     return json.loads(reply.ok.payload.to_string())
                 raise SystemExit(f"{key}: {reply.err.payload.to_string()}")

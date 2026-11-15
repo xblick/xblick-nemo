@@ -25,7 +25,7 @@ Take the images from around the object. Give one mask per image, in which non-ze
 | `--images FILE ...` | the images (required) |
 | `--masks FILE ...` | one mask per image |
 | `--boxes X0,Y0,X1,Y1 ...` | one box in pixels per image, as the alternative to `--masks` |
-| `--device NAME` | the GPU, default `cuda` |
+| `--device NAME` | the GPU, default `cuda` (GPU 0), or `cuda:N` |
 
 ### From a camera
 
@@ -67,7 +67,7 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 | --- | --- | --- |
 | `--objects-dir DIR` | the data directory | The directory of the objects, `~/.local/share/xblick/nemo/` by default. The node expands `~` and `${VAR}` in it. |
 | `--object NAME` | none | Finds this object from the start. You can repeat the option. Live: it changes while the node runs. |
-| `--camera SPEC` | none | Reads this camera from the start. You can repeat the option. |
+| `--camera SPEC` | none | Reads this camera from the start. You can repeat the option, or leave it out and start the cameras on `<node>/cameras`. |
 | `--node NAME` | `nemo` | Sets the node's part of the topics. |
 | `--segments` | off | Also publishes `instances` and `detections_2d`. |
 | `--autocast` | `bfloat16` | Selects the decoder's number format: `bfloat16` or `none` for float32. |
@@ -79,8 +79,8 @@ a depth stream `<CAMERA>/<depth>` in `16UC1` millimetres. The depth must be in t
 | `--min-pixels N` | `200` | Sets the smallest region that a search accepts, in pixels at the depth's resolution. Live: it changes while the node runs. |
 | `--detect-every SECONDS` | `0.5` | Sets the shortest time between two searches for a lost object. Live: it changes while the node runs. |
 | `--history N` | `10` | Keeps this many frames of each stream for pairing by stamp. |
-| `--max-offset-ms X` | half the depth's frame period | Pairs a colour frame with the nearest depth frame within this offset. `0` pairs equal stamps only. |
-| `--device NAME` | `cuda` | Selects the GPU. |
+| `--max-offset-ms X` | `20` | Pairs a colour frame with the nearest depth frame within this offset. A colour frame without a depth frame that close is skipped and counted. `0` pairs equal stamps only. The value covers the cameras that we use: an Azure Kinect stamps the colour and the depth of one capture up to 17 ms apart, and the rc_visard gives a depth frame the stamp of its left image. |
+| `--device NAME` | `cuda` | Selects the GPU: `cuda` is GPU 0, `cuda:N` is GPU N. A GPU that cannot be used ends the node with one line. |
 | `--max-hz X` | `20` | Takes at most this many colour frames per second and camera. `0` or `none` takes every frame. |
 | `--local MODE` | `auto` | Selects the transport for a camera on this host: `auto`, `shm` or `cuda`. |
 | `--no-download` | off | Ends the node at once when the checkpoint is missing, and names it. The node makes nothing. |
@@ -124,6 +124,13 @@ The queryables take the same requests as JSON.
 | `<node>/objects` | `{"add": NAME}`, `{"remove": NAME}`, `{"make": {"camera": CAMERA, "name": NAME, "label": LABEL, "views": 4, "min_angle": 15, "timeout": 60}}` |
 
 A `make` request takes `"sam_id": ID` in place of `"label"`.
+
+The node answers at once, also while the model works on a frame. It checks a `start`, `stop`, `add` or `remove` and
+answers with the cameras or objects as they are from the next frame on. The frame loop then starts or stops the camera,
+or loads or drops the object. An object that cannot be loaded then is dropped from the list with a line in the log.
+`make` answers when the object is made and saved, within the request's `timeout` and the time to encode and save it.
+It works in a thread of its own, so the frames go on. The object is found from the next frame on. The queryables exist
+once the model is loaded: a request before that reaches no node.
 
 ## As a segmenter for xblick-foundationpose
 

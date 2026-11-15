@@ -103,7 +103,7 @@ The options that most users change:
 | --- | --- | --- |
 | `--objects-dir DIR` | the data directory | Where the objects are, in place of `~/.local/share/xblick/nemo/`. |
 | `--object NAME` | none | Finds this object from the start. Repeat it for each object. Live: it changes while the node runs. |
-| `--camera SPEC` | none | Reads this camera from the start. Repeat it for more cameras. |
+| `--camera SPEC` | none | Reads this camera from the start. Repeat it for more cameras. Without it the node starts with no camera, and you start cameras at run time on `nemo/cameras`. |
 | `--segments` | off | Also publishes `instances` and `detections_2d`. |
 | `--max-hz` | `20` | Limits the colour frames per second and camera. `0` or `none` takes every frame. |
 | `--local` | `auto` | Selects the transport for a camera on this host: `auto`, `shm` or `cuda`. |
@@ -179,3 +179,43 @@ backbone and is under Apache-2.0. `tools/setup.sh` fetches both, and this reposi
 
 The code of this repository is licensed under the Apache License 2.0 ([LICENSE](LICENSE)). [NOTICE](NOTICE) names
 the copyright holder and the licences of NeMO and DINOv2.
+
+## Citation
+
+This node uses NeMO (DLR-RM/nemo). If you use it in research, cite their work. The entries below are copied from [its
+README](https://github.com/DLR-RM/nemo/blob/76478815baf2c99002cccbee98426773fa4e59cd/README.md):
+
+```bibtex
+@inproceedings{jung2026nemo,
+  title     = {Finding NeMO: A Geometry-Aware Representation of Template Views for Few-Shot Perception},
+  author    = {Jung, Sebastian and Klüpfel, Leonard and Triebel, Rudolph and Durner, Maximilian},
+  booktitle = {International Conference on 3D Vision (3DV)},
+  year      = {2026},
+}
+```
+
+NeMO's encoder is DINOv2 (facebookresearch/dinov2). Cite it as its repository asks. The entries below are copied from
+[its README](https://github.com/facebookresearch/dinov2/blob/7764ea0f912e53c92e82eb78a2a1631e92725fc8/README.md):
+
+```bibtex
+@misc{oquab2023dinov2,
+  title={DINOv2: Learning Robust Visual Features without Supervision},
+  author={Oquab, Maxime and Darcet, Timothée and Moutakanni, Theo and Vo, Huy V. and Szafraniec, Marc and Khalidov, Vasil and Fernandez, Pierre and Haziza, Daniel and Massa, Francisco and El-Nouby, Alaaeldin and Howes, Russell and Huang, Po-Yao and Xu, Hu and Sharma, Vasu and Li, Shang-Wen and Galuba, Wojciech and Rabbat, Mike and Assran, Mido and Ballas, Nicolas and Synnaeve, Gabriel and Misra, Ishan and Jegou, Herve and Mairal, Julien and Labatut, Patrick and Joulin, Armand and Bojanowski, Piotr},
+  journal={arXiv:2304.07193},
+  year={2023}
+}
+
+@misc{darcet2023vitneedreg,
+  title={Vision Transformers Need Registers},
+  author={Darcet, Timothée and Oquab, Maxime and Mairal, Julien and Bojanowski, Piotr},
+  journal={arXiv:2309.16588},
+  year={2023}
+}
+
+@misc{jose2024dinov2meetstextunified,
+  title={DINOv2 Meets Text: A Unified Framework for Image- and Pixel-Level Vision-Language Alignment},
+  author={Cijo Jose and Théo Moutakanni and Dahyun Kang and Federico Baldassarre and Timothée Darcet and Hu Xu and Daniel Li and Marc Szafraniec and Michaël Ramamonjisoa and Maxime Oquab and Oriane Siméoni and Huy V. Vo and Patrick Labatut and Piotr Bojanowski},
+  journal={arXiv:2412.16334},
+  year={2024}
+}
+```

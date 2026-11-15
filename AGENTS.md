@@ -2,7 +2,7 @@
 
 xblick-nemo: NeMO (DLR, few-shot "neural memory objects") as a Durchblick node. Objects known from a few images
 (no mesh, no text prompt) are found, segmented and posed in every frame of any RGB-D camera. The node fits NeMO's
-object coordinates to the measured depth (Sim3). Version 0.2.3, tested in the simulation only. Human documentation:
+object coordinates to the measured depth (Sim3). Version 0.2.4, tested in the simulation only. Human documentation:
 `README.md` (entry) and `docs/` (usage, design, accuracy, performance). Transport-wide traps (Zenoh sessions
 and routers, CUDA rings, looped playback, hanging tests) are in the core repository's AGENTS.md
 (`github.com/xblick/xblick`). This file does not repeat the README.
@@ -37,6 +37,14 @@ tools/check_references.sh                         # no internal references (patt
   read: the store prints the command that moves it. The core's `docs/reference/files.md` has the rule. The objects default to `xblick.paths.data_dir("nemo")` (`objects_dir_of`); DINOv2 is code in `third_party/dinov2`.
 - Fail fast. Missing code from the setup (`weights.REQUIRED`, `install_dinov2`), a bad camera spec, an object that does not load: raise with a message that says what
   to do (as `nemo.install_dinov2` and `objects.load` do). No silent defaults.
+- `--camera` is optional: a documented exception to the core's rule "`--camera` explicit and required". The node takes
+  its cameras at the start or at run time on `<node>/cameras`, and never guesses one. Every camera it reads is named,
+  on the command line or in a request.
+- Queryables answer in Zenoh's thread at once, from the state that `lock` guards (`accepted`, the parameter
+  `object`). `start`, `stop`, `add` and `remove` are checked and accepted there, and the loop applies them
+  (`apply_cameras`, `apply_parameters`) between frames. Only `make` answers later, in a thread of its own, with its
+  result. Never answer a query from the frame loop: a query still open at the caller's timeout gets a `Timeout` reply,
+  which a sender takes for a second node.
 - Stay offline at run time. `tools/setup.sh` fetches the code at fixed commits. `weights.py` is the one place of the
   checkpoint (shards, `CHECKPOINT_SHA256`, size, `TERMS`); `weights.STORE.ensure` runs at the start (node and
   `xblick-nemo-make`) before the model loads. Checkpoint there: no file written (`test_weights.py` checks it).
@@ -94,7 +102,7 @@ tools/check_references.sh                         # no internal references (patt
 | `--mask-threshold` / `--conf-threshold` | 0.5 / 1.2 |
 | `--inlier-distance` / `--min-inliers` / `--min-inlier-ratio` | 0.01 m / 50 / 0.3 |
 | `--min-pixels` / `--detect-every` / `--history` | 200 / 0.5 s / 10 |
-| `--max-offset-ms` | half the depth's frame period; 0: equal stamps only |
+| `--max-offset-ms` | 20 (fixed); 0: equal stamps only |
 | `--max-hz` / `--local` | 20 / `auto` (`shm`, `cuda`) |
 | Client | `--views` 4, `--min-angle` 15, `--timeout` 90 |
 | Other nodes | xblick-sam3 on the same camera for `make`; rc_visard needs xblick-fast-foundationstereo's depth; xblick-foundationpose can consume `--segments` |
