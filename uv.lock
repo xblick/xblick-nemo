@@ -859,18 +859,14 @@ wheels = [
 
 [[package]]
 name = "xblick"
-version = "0.5.11"
-source = { registry = "https://pypi.org/simple" }
+version = "0.5.14"
+source = { git = "https://github.com/xblick/xblick?rev=ros2#c4edde4d68a31c368cb74bc5844bcd733b0f304d" }
 dependencies = [
     { name = "eclipse-zenoh" },
     { name = "numpy" },
     { name = "pillow" },
     { name = "rich" },
     { name = "textual" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/60/ff522d6c9d35f5a83130f2353c34c6a9564be5c5fc32e93c08048e40eae0/xblick-0.5.11.tar.gz", hash = "sha256:da26af392a710f8a595c9174ab943bd43e2f131eeed6477aa10296a7382b9d05", size = 807950, upload-time = "2026-11-15T03:03:11.588Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/2f/e2ac993960fdda6cfdc2ce6b503dd93eb8846b8a0c8a10339e5e3ea5a561/xblick-0.5.11-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7415f5336d8c69385f2611d5e9765d9fa2bdec124c68677f54e39ae94d48c628", size = 521226, upload-time = "2026-11-15T03:03:08.406Z" },
 ]
 
 [[package]]
@@ -909,7 +905,7 @@ requires-dist = [
     { name = "plotly", specifier = ">=5" },
     { name = "torch", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu130" },
     { name = "torchvision", index = "https://download.pytorch.org/whl/cu130" },
-    { name = "xblick", specifier = ">=0.5.11,<0.6" },
+    { name = "xblick", git = "https://github.com/xblick/xblick?rev=ros2" },
 ]
 
 [package.metadata.requires-dev]

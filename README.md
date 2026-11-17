@@ -144,6 +144,34 @@ The node needs 10 ms per object and frame. NeMO's own code needs 43 to 93 ms for
 
 [docs/performance.md](docs/performance.md) explains the terms and has the measurements.
 
+## ROS 2
+
+The branch `ros2` of this repository takes the core from its branch `ros2`, which is not released. `uv sync` then builds
+the core's C++ part from source, which needs a C++ compiler. The core adds the option `--ros`: the node then also takes
+part in ROS 2 on `rmw_zenoh`, and its own topics stay as they are. Without `--ros` nothing changes.
+
+```bash
+.venv/bin/xblick-nemo --camera test/camera --ros
+```
+
+| ROS 2 topic | ROS type |
+| --- | --- |
+| `/<camera>/nemo/detections_3d` | `vision_msgs/msg/Detection3DArray` |
+| `/<camera>/nemo/detections_2d` (`--segments`) | `vision_msgs/msg/Detection2DArray` |
+| `/<camera>/nemo/instances/image_raw`, `.../camera_info`, `.../image_raw/compressed` (`--segments`) | `sensor_msgs/msg/Image` (`mono16`), `CameraInfo`, `CompressedImage` (PNG) |
+| `/<camera>/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` |
+
+ROS 2 does not get the cameras and objects queryables (JSON, no ROS services) and the instances' rings. The node sends a
+topic to ROS only while a ROS subscriber reads it. The program is the ROS node `/xblick_nemo` (`--ros-node`), and its
+parameters are the ROS node `/<camera>/nemo`. ROS clients read the parameters and may set them only when the node was
+started with `--ros-params-writable`.
+
+Each part of `--camera` and `--node` has to be a ROS name: letters, digits and `_`, not starting with a digit. Otherwise
+`--ros` stops the node at its start with one line. A test checks the detections and the instances of a stand-in model
+against our own ROS subscriber; no ROS 2 installation and no real model were used for this node. [Durchblick and ROS
+2](https://github.com/xblick/xblick/blob/ros2/docs/integrations/ros2.md) describes the option, the other `--ros-*`
+options and ROS 2's tools.
+
 ## Limits
 
 - We tested the node in the simulation only (status of 2026-11-01, version 0.1.0). We have not tested it on a robot.

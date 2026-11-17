@@ -12,7 +12,8 @@ dependencies = [
     # clouds (0.3.64), RVL depth (0.3.62), ring keys with the host (0.3.59), the options as parameters and the services
     # in a daemon thread (0.3.56), a frame's partners read with it (0.3.44), .rgbd (streams, collect_views,
     # Distorter, waiting), .paths, .logs, node (0.3.23)
-    "xblick>=0.5.11,<0.6",
+    # branch ros2 only: the core from its unreleased branch ros2 (--ros); main pins the release
+    "xblick @ git+https://github.com/xblick/xblick@ros2",
     "torch>=2.7",
     "torchvision",
     "numpy>=1.26",
