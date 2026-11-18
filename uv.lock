@@ -859,7 +859,7 @@ wheels = [
 
 [[package]]
 name = "xblick"
-version = "0.5.11"
+version = "0.5.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eclipse-zenoh" },
@@ -868,14 +868,14 @@ dependencies = [
     { name = "rich" },
     { name = "textual" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/60/ff522d6c9d35f5a83130f2353c34c6a9564be5c5fc32e93c08048e40eae0/xblick-0.5.11.tar.gz", hash = "sha256:da26af392a710f8a595c9174ab943bd43e2f131eeed6477aa10296a7382b9d05", size = 807950, upload-time = "2026-11-15T03:03:11.588Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/51/d2/576c8978b23f6dd7f7a13203c8fe6edcf5fccd9e4ca30bfd465a183ab3ca/xblick-0.5.14.tar.gz", hash = "sha256:2e123c426f04ee6d4a6c66d987c61131a64d7058ff0a0ae5686f74a25f716c96", size = 858315, upload-time = "2026-11-15T12:42:57.68Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/2f/e2ac993960fdda6cfdc2ce6b503dd93eb8846b8a0c8a10339e5e3ea5a561/xblick-0.5.11-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7415f5336d8c69385f2611d5e9765d9fa2bdec124c68677f54e39ae94d48c628", size = 521226, upload-time = "2026-11-15T03:03:08.406Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/19/4018c0f07779c20239851947a6dfba4ea862aaf3ca8f4de63c94bc2ddfd8/xblick-0.5.14-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:52e23f3ccbe46fc4f3ab58887e51a0f120ff580a95b726929f4e5343e72b0c2b", size = 562500, upload-time = "2026-11-15T12:42:54.762Z" },
 ]
 
 [[package]]
 name = "xblick-nemo"
-version = "0.2.5"
+version = "0.2.6"
 source = { editable = "." }
 dependencies = [
     { name = "einops" },
@@ -909,7 +909,7 @@ requires-dist = [
     { name = "plotly", specifier = ">=5" },
     { name = "torch", specifier = ">=2.7", index = "https://download.pytorch.org/whl/cu130" },
     { name = "torchvision", index = "https://download.pytorch.org/whl/cu130" },
-    { name = "xblick", specifier = ">=0.5.11,<0.6" },
+    { name = "xblick", specifier = ">=0.5.14,<0.6" },
 ]
 
 [package.metadata.requires-dev]

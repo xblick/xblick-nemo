@@ -52,7 +52,7 @@ tools/check_references.sh                         # no internal references (patt
   a partial or unchecked file get its final name. `download_only` is in `leave_out` of `declare_options`;
   `no_download` is a read-only parameter. `xblick.weights.parse_args` lifts `required` options for
   `--download-only` (spelled out).
-- Core pin: `xblick>=0.5.11,<0.6` (the core's Python package, `durchblick` up to 0.3 and `blick` in 0.4; uses
+- Core pin: `xblick>=0.5.14,<0.6` (the core's Python package, `durchblick` up to 0.3 and `blick` in 0.4; uses
   `xblick.rgbd`: `CameraSpec`, `RGBDInputs`, `FramePreparer`, `collect_views`, `Distorter`; `xblick.paths`,
   `xblick.node`). For a core change needed here: release the core, raise the pin and the rev, `uv lock`.
 - Keep options, topics and numbers in README and `docs/` in sync with the code in the same commit. Follow the core's

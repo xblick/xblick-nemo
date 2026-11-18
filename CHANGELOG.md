@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.6 (2026-11-18)
+
+The Durchblick core 0.5.14.
+
+### Changed
+
+- The node needs `xblick>=0.5.14,<0.6`; uv.lock fixes xblick 0.5.14 (was 0.5.11). No other package changed.
+- A parameter set whose deadline has passed when the node comes to act on it is refused, and the caller raises
+  `Expired`. A set meant for another node on the same key is refused (core 0.5.13).
+- The rings the node publishes record their creator, so `xblick clean --remove` removes them after the node was
+  killed (core 0.5.12).
+
+### Fixed
+
+- Closing no longer raises "Already mutably borrowed" in the thread of the program's declaration (core 0.5.13).
+
+Compatible with earlier clients: nothing on the wire changed.
+
 ## 0.2.5 (2026-11-15)
 
 A fixed camera's pose for `make`.
