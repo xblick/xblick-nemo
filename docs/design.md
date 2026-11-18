@@ -64,7 +64,7 @@ For a camera with lens distortion, the pose is in the undistorted pinhole camera
 
 With `--segments` the node publishes `instances` and `detections_2d` in the form of xblick-sam3. The node finds
 the masks in the undistorted frame. It maps them back into the colour camera's own image with
-`xblick.rgbd.Distorter`, so that the labels fit the distorted image. We tested this on a distorted stream. The
+`xblick.rgbd.Distorter`, so that the labels fit the distorted image. On a distorted stream, the
 masks reach an IoU of 0.95 against the masks of the same frames without distortion, distorted afterwards.
 
 The `instances` publisher uses the PNG codec, because the image is `mono16`. The node creates the publisher with the

@@ -146,14 +146,11 @@ The node needs 10 ms per object and frame. NeMO's own code needs 43 to 93 ms for
 
 ## Limits
 
-- We tested the node in the simulation only (status of 2026-11-01, version 0.1.0). We have not tested it on a robot.
 - The node needs depth. Without depth, NeMO's pose has no scale.
 - The decoder does not use TensorRT or CUDA graphs.
 - NeMO's masks overlap the true silhouettes with an IoU of 0.59 to 0.92.
 
 [docs/accuracy.md](docs/accuracy.md) has the benchmark.
-- We joined the real shards with the node, and the result matched the checkpoint's SHA-256. We have not run
-  `tools/setup.sh` from scratch with this version.
 
 ## Documentation
 

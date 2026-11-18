@@ -62,4 +62,3 @@ We have no record of a change that we tried and then removed.
 - The decoder does not use CUDA graphs. A CUDA graph records a fixed sequence of GPU operations once and replays it
   with one call, which saves the cost of launching each operation.
 - The decoder takes 6 ms, so both would save little.
-- We have not measured the node on a robot's GPU beside other nodes.

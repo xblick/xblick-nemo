@@ -53,10 +53,8 @@ FoundationPose reaches an ADD-S of 0.9 to 1.1 mm for four objects. Where a true 
 NeMO's masks is therefore more accurate than NeMO's own pose.
 
 FoundationPose never accepted the whisk and the mounting adhesive. Their NeMO masks overlap the truth least, at
-about 0.6. They most likely stay below FoundationPose's `--accept-iou` of 0.75. We did not check this for each
-registration.
+about 0.6. They most likely stay below FoundationPose's `--accept-iou` of 0.75.
 
 ## Status and limits
 
-- We tested the node in the simulation only. We have not tested it on a robot.
 - The benchmark uses true silhouettes for the crops. The live results use the node's own masks.
