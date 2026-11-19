@@ -77,7 +77,7 @@ fi
 # ------------------------------------------------------------------------------------------------- the setup
 
 cat <<EOF
-$PROG: setting up $PWD. The first call downloads:
+$PROG: setting up $PWD. It downloads what is missing of:
   * NeMO's code and checkpoint shards, the submodule third_party/nemo (about 870 MB, github.com/DLR-RM/nemo)
   * .venv as uv.lock fixes it: Python 3.12, the core xblick, and PyTorch for CUDA 13 with NVIDIA's CUDA libraries
     (NVIDIA's licence, License.txt in each nvidia package); about 3 GB, 6 GB on disk

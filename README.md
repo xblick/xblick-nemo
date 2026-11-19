@@ -130,7 +130,7 @@ The camera name `cam/rc_visard` is an example. A camera spec has the form
 `CAMERA[:color=NAME][:depth=NAME][:segmenter=NAME]`, with the defaults `color` and `depth`. A camera node publishes
 the streams, for example [xblick-azure-kinect](https://github.com/xblick/xblick-azure-kinect) with
 `--camera cam/azurekinect:depth=depth_to_color`. The core's viewer `xblick rerun` draws the found objects over the
-images; `uv tool install "xblick[rerun]>=0.5,<0.6"` installs it.
+images; `uv tool install "xblick[rerun,video,cam]>=0.5,<0.6"` installs it.
 
 The options that most users change:
 
