@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.7 (2026-11-19)
+
+An installation that a beginner can follow from the README alone.
+
+### Changed
+
+- `tools/setup.sh --help` describes the script and its options and ends. Before, it ran the setup.
+- `tools/setup.sh` says when it finds no NVIDIA GPU with driver 580 or newer, which the node needs to start, and
+  goes on (`--download-only` needs no GPU).
+- `tools/setup.sh` refuses an unknown option. Before, it ignored every option.
+- An interrupted clone of DINOv2's code no longer stops the next call of `tools/setup.sh`.
+- `tools/setup.sh` checks its prerequisites first. Without git or uv it stops and prints the command that installs
+  them. On a PC other than Linux on x86-64, for which the core has no wheels, it stops at once.
+- Before its downloads, `tools/setup.sh` lists what it downloads, with the sizes and the licences.
+- The README's installation is a numbered path from the prerequisites to a first result without a camera.
+
 ## 0.2.6 (2026-11-18)
 
 The Durchblick core 0.5.14.

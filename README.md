@@ -29,23 +29,55 @@ With `--segments`, xblick-foundationpose can use this node as its segmenter (`--
 
 ## Requirements
 
-- An NVIDIA GPU with CUDA.
-- `uv`, `git` and Python 3.12.
-- Durchblick's Python package `xblick` 0.5 or newer, below 0.6. The setup installs it from GitHub.
+- Linux on x86-64 and an NVIDIA GPU with driver 580 or newer (PyTorch for CUDA 13).
+- git and [uv](https://docs.astral.sh/uv/). Step 1 of the installation installs them. uv installs Python 3.12.
+- Durchblick's Python package `xblick` 0.5 or newer, below 0.6. The setup installs it from PyPI.
+- About 6 GB of disk for `.venv`, and 1.7 GB for NeMO's submodule and checkpoint.
 - A camera with a colour stream and a depth stream in the colour camera's geometry.
 - NeMO's code and checkpoint are under the MIT licence, except five files of its decoder heads, which are Naver's
   under CC BY-NC-SA 4.0 (non-commercial use only). The node uses them. DINOv2's code is under Apache-2.0.
 
 ## Install
 
-```bash
-tools/setup.sh
-```
+1. Install the prerequisites. `nvidia-smi` prints the GPU and the driver version, which must be 580 or newer. On
+   Ubuntu, `sudo apt install nvidia-driver-580` and a restart install that driver. After the installation of uv, open
+   a new terminal, so that `uv` is on `PATH`.
 
-The script fetches NeMO's code and checkpoint, DINOv2's code and the Python environment in `.venv`. Then it runs
-`xblick-nemo --download-only`, which joins the checkpoint's shards from the submodule into `~/.cache/xblick/nemo/checkpoint.pth`
-and checks its SHA-256. You can run the script again, and it then does only what changed. After the setup, the node
-needs no network.
+   ```bash
+   nvidia-smi
+   sudo apt install git
+   wget -qO- https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Clone this repository with its submodule, NeMO's code and checkpoint:
+
+   ```bash
+   git clone --recurse-submodules https://github.com/xblick/xblick-nemo.git
+   cd xblick-nemo
+   ```
+
+3. Run the setup script. It fetches NeMO's code and checkpoint shards (about 870 MB), creates `.venv` exactly as
+   `uv.lock` fixes it, with Python 3.12 and PyTorch for CUDA 13 (about 3 GB to download, 6 GB on disk), and clones
+   DINOv2's code. Then it runs `xblick-nemo --download-only`, which joins the checkpoint's shards into
+   `~/.cache/xblick/nemo/checkpoint.pth` and checks its SHA-256. It prints the licences before the downloads. When
+   git or uv is missing, it stops and prints the command that installs it. A second call does only what changed, and
+   after it the node needs no network. `tools/setup.sh --help` describes it.
+
+   ```bash
+   tools/setup.sh
+   ```
+
+4. Make a first object, without a camera, from the four photos of a mug that come with NeMO:
+
+   ```bash
+   .venv/bin/xblick-nemo-make mug --images third_party/nemo/assets/mug/*.jpg
+   ```
+
+   It loads NeMO on the GPU and prints the object's directory, `~/.local/share/xblick/nemo/NeMO/mug`. Open
+   `templates.png` there: it shows the four views of the mug that the object holds. To find the mug in a camera's
+   stream, the node needs a camera with a depth stream, as [Run](#run) shows, for example with `--object mug`.
+
+### Downloads at the start
 
 The node itself also joins a missing checkpoint at its start, before it loads the model. It prints NeMO's terms, the
 file and its size first. The checkpoint comes from the submodule, so this step needs no network. The submodule and
@@ -95,7 +127,10 @@ mkdir -p ~/.local/share/xblick/nemo && mv ~/.local/share/xblick/objects/NeMO ~/.
 ```
 
 The camera name `cam/rc_visard` is an example. A camera spec has the form
-`CAMERA[:color=NAME][:depth=NAME][:segmenter=NAME]`, with the defaults `color` and `depth`.
+`CAMERA[:color=NAME][:depth=NAME][:segmenter=NAME]`, with the defaults `color` and `depth`. A camera node publishes
+the streams, for example [xblick-azure-kinect](https://github.com/xblick/xblick-azure-kinect) with
+`--camera cam/azurekinect:depth=depth_to_color`. The core's viewer `xblick rerun` draws the found objects over the
+images; `uv tool install "xblick[rerun]>=0.5,<0.6"` installs it.
 
 The options that most users change:
 
